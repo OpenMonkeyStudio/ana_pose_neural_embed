@@ -39,7 +39,7 @@ end
 
 % now, get neural time series for each cell
 for im=1:numel(monks)
-    get_all_sdf(anadirs{im},monks{im})
+    get_matched_sdf(anadirs{im},monks{im})
 end
 
 %% run the embedding

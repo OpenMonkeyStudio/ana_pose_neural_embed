@@ -1,7 +1,8 @@
-function get_all_sdf(anadir,monk)
+function get_matched_sdf(anadir,monk)
+% get_matched_sdf(anadir,monk)
 
 % settings
-nparallel = 1;
+nparallel = 20;
 
 fs_spk = 1000;
 fs_frame = 30;
@@ -17,17 +18,28 @@ timwin_regressor = [-0.025 0.025];
 posedir = [fileparts(anadir) '/Data_proc_13joint/data_ground'];
 [spkparentpath,~] = fileparts(anadir); % one level up
 
-tmpresid = {'noresid','resid'};
 tmpstr = {'lin','pois'};
 muastr = {'','_mua1','_mua2'};
-%sdfpath = [anadir '/sdf_fs30_' resstr{useSDF_resid+1} '_' tmpstr{resid_type}];
 sdfpath = sprintf('%s/sdf_fs30_resid_%s_%g-%g%s',anadir,tmpstr{resid_type},timwin(1)*1000, timwin(2)*1000,muastr{collapseToMUA+1});
 if ~exist(sdfpath); mkdir(sdfpath); end
 sdfpath_data = [sdfpath '/sdf'];
 if ~exist(sdfpath_data); mkdir(sdfpath_data); end
+
 % datasets
 [datasets,taskInfo] = get_datasets(monk);
 
+if 0
+    tmp = {
+        'yo_2021-02-23_01_enviro'
+        'yo_2021-02-28_01_enviro'
+        'yo_2021-03-23_01_enviro'
+        'yo_2021-04-12_01_enviro'
+        'yo_2021-04-16_01_enviro'
+        'yo_2021-05-13_01_enviro'
+        'yo_2021-05-15_01_enviro'
+        };
+    datasets = struct('name',tmp);
+end
 
 %% get SDF for each cell    
 startTime = tic;
@@ -38,7 +50,6 @@ for iw=1:numel(ignore_warnings); warning('off',ignore_warnings{iw}); end
 if nparallel > 1 && isempty(gcp('nocreate'))
     myPool = parpool('local',nparallel);
 end
-
 
 % call
 startTime = tic;
@@ -259,12 +270,8 @@ parfor id=1:numel(datasets)
             if collapseToMUA>0
                 a = spk.area;
             else
-                if 1
-                    fprintf('\t getting area...\n')
-                    [a,~] = get_area(ch,day,monk,0);
-                else
-                    a = '!';
-                end
+                fprintf('\t getting area...\n')
+                [a,~] = get_area(ch,day,monk,0);
             end
 
             % store
@@ -310,9 +317,9 @@ parfor id=1:numel(datasets)
     end
 end
 
+% finish and clean
 fprintf('\n\n TOTAL SDF calc: %g\n', toc(startTime))     
 
 for iw=1:numel(ignore_warnings); warning('on',ignore_warnings{iw}); end
-
 delete(gcp('nocreate'))
     
