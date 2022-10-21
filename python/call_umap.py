@@ -238,9 +238,8 @@ if __name__ == '__main__':
     # func='fit'
     # name_in='/Volumes/SSD_Q/P_embedding/embed_rhesus_jointAngle_vcom_pcom_preAlignPose_pca/embed_seq_shiftDurSim/umap_data_train.mat'
     # savepath = '/Volumes/SSD_Q/P_embedding/embed_rhesus_jointAngle_vcom_pcom_preAlignPose_pca/embed_seq_shiftDurSim'
-    func=sys.argv[1]
-    name_in=sys.argv[2]
-    savepath=sys.argv[3]
+    name_in=sys.argv[1]
+    savepath=sys.argv[2]
 
     # load the data
     # dat_in = loadmat(name_in,squeeze_me=True)
@@ -254,6 +253,7 @@ if __name__ == '__main__':
     #else:
     #    dat_in['parallel']=False
 
+    func = dat_in['func']
     # calls
     if func == 'fit':
         fit()

@@ -4,42 +4,24 @@ function embed_pose(ecfg)
 
 % checks
 ecfg = checkfield(ecfg,'anadir','needit');
-ecfg = checkfield(ecfg,'getFeatures','needit');
+ecfg = checkfield(ecfg,'monk','needit');
+ecfg = checkfield(ecfg,'baseDataset','needit');
+ecfg = checkfield(ecfg,'nparallel',15);
+
 ecfg = checkfield(ecfg,'train','needit');
-ecfg = checkfield(ecfg,'datalog_path','needit');
+ecfg = checkfield(ecfg,'calcFeatures',1);
+ecfg = checkfield(ecfg,'normFeatures',2);
+ecfg = checkfield(ecfg,'embed',1);
+ecfg = checkfield(ecfg,'cluster',1);
 
 
 % flags
-getFeatures = 1;
-    calcFeatures = 0;
-        useOwnFirstData = 0;
-    loadFeatures = 0;
-    loadNormFeatures = 1;
-    
-prepTraining = 1;
-runEmbedding = 1;
-doRembed = 1;
-
 plotEmbedding = 1;
 makeExampleVideos = 0;
 
 % settings
-monk = 'wo';
-
-nparallel = 15;
-
-doTrim = 0;
-
-% first dataset?
-if useOwnFirstData
-    if strcmp(monk,'yo')
-        baseDataset = 'yo_2021-02-25_01_enviro';
-    else
-        baseDataset = 'wo_2021-12-08_01_enviro';
-    end
-else
-    baseDataset = 'other';
-end
+nparallel = ecfg.nparallel;
+baseDataset = ecfg.baseDataset; %'yo_2021-02-25_01_enviro';
 
 % egocentric features
 theseFeatures = {
@@ -70,35 +52,33 @@ datadir = [fileparts(anadir) '/Data_proc_13joint'];
 
 featdir = [anadir '/X_feat'];
 if ~exist(featdir); mkdir(featdir); end
+featdir_norm = [featdir '_norm'];
+if ~exist(featdir_norm); mkdir(featdir_norm); end
+    
+featInfoPath = [anadir '/featInfo.mat'];
 infopath = [anadir '/info.mat'];
 
 % deffine datasets
-s = ecfg.datalog_path;
-%s = [get_code_path() '/bhv_cluster/data_log_yoda_ephys.xlsx'];
-%s = [get_code_path() '/bhv_cluster/data_log_woodstock_ephys.xlsx'];
-
-taskInfo = readtable(s);
-names = cellfun(@(x) [x '_proc.mat'], taskInfo.name,'un',0);
-datasets = struct('name',names,'folder',repmat({[datadir '/data_ground']},size(taskInfo,1),1));
-
-%datasets = datasets(8:end);
+[datasets,taskInfo] = get_datasets(ecfg.monk);
 
 START = tic;
 
-%% for each dataset, load and build features
-if getFeatures
-    
+%% for each dataset, load and build features    
+if ecfg.calcFeatures % calculate fresh
+
     % run the first dataset to get all feature params
     if ecfg.train
+        featInfo = {[],[]};
+        
         firstDataset = find(contains({datasets.name},baseDataset));
         if numel(firstDataset)~=1; error('unrecognized dataset'); end
-            
+
         name = datasets(firstDataset).name;
-        [out,procInfo] = run_proc(name,datadir,featdir,theseFeatures,theseFeatures2,procInfo);
+        [out,featInfo] = run_proc(name,datadir,featdir,theseFeatures,theseFeatures2,featInfo);
 
         % save it
         tmp = [];
-        tmp.procInfo = procInfo;
+        tmp.featInfo = featInfo;
         tmp.datasets = datasets;
         tmp.theseFeatures = theseFeatures;
         tmp.theseFeatures2 = theseFeatures2;
@@ -106,20 +86,18 @@ if getFeatures
         tmp.ifeat = out.ifeat;
         tmp.baseDataset = baseDataset;
 
-        sname = [featdir '/procInfo.mat'];
-        parsave(sname,tmp)
+        parsave(featInfoPath,tmp)
     else
-        tmp = load([featdir '/procInfo_other.mat']);
-        procInfo = tmp.procInfo;
+        tmp = load(featInfoPath);
+        featInfo = tmp.procInfo;
         firstDataset = [];
 
+        % resave info for this dataset
         tmp.datasets = datasets;
-
-        sname = [featdir '/procInfo.mat'];
-        parsave(sname,tmp)
+        parsave(featInfoPath,tmp)
     end
-    
-    
+
+
     % now loop over the rest
     if nparallel > 1 && isempty(gcp('nocreate'))
         myPool = parpool(nparallel);
@@ -132,104 +110,22 @@ if getFeatures
         name = datasets(id).name;
         fprintf('%g: %s\n',id,name)
 
-        [tmppout,~] = run_proc(name,datadir,featdir,theseFeatures,theseFeatures2,procInfo);
+        run_proc(name,datadir,featdir,theseFeatures,theseFeatures2,featInfo);
     end
     toc
-        
-        
     
-    if calcFeatures
-        procInfo = {[],[]};
-
-        % run the firsts dataset to get the processing info
-        if useOwnFirstData
-            firstDataset = find(contains({datasets.name},baseDataset));
-            if numel(firstDataset)~=1; error('unrecognized dataset'); end
-            
-            name = datasets(firstDataset).name;
-            [out,procInfo] = run_proc(name,datadir,featdir,theseFeatures,theseFeatures2,procInfo);
-
-            % save it
-            tmp = [];
-            tmp.procInfo = procInfo;
-            tmp.datasets = datasets;
-            tmp.theseFeatures = theseFeatures;
-            tmp.theseFeatures2 = theseFeatures2;
-            tmp.feat_labels = out.feat_labels;
-            tmp.ifeat = out.ifeat;
-            tmp.baseDataset = baseDataset;
-
-            sname = [featdir '/procInfo.mat'];
-            parsave(sname,tmp)
-        else
-            tmp = load([featdir '/procInfo_other.mat']);
-            procInfo = tmp.procInfo;
-            firstDataset = [];
-
-            tmp.datasets = datasets;
-
-            sname = [featdir '/procInfo.mat'];
-            parsave(sname,tmp)
-        end
-        
-        % now loop over the rest
-        if nparallel > 1 && isempty(gcp('nocreate'))
-            myPool = parpool(nparallel);
-        end
-        
-        tic
-        theseSets = setxor(1:numel(datasets),firstDataset);
-        parfor id1 = 1:numel(theseSets)
-            id = theseSets(id1);
-            name = datasets(id).name;
-            fprintf('%g: %s\n',id,name)
-
-            [tmppout,~] = run_proc(name,datadir,featdir,theseFeatures,theseFeatures2,procInfo);
-        end
-        toc
-        
-            
-        % save info
-        save(infopath,'datasets','theseFeatures','theseFeatures')
-    else
-        fprintf('loading training info... \n')
-        load(infopath)
-    end
-
+    % load and concatenate them
+    [X_feat,tmpdat] = load_features(featdir,'feat',datasets);
+    evals(tmpdat); % put into environment
     
-    % load the features back
-    if (loadFeatures || calcFeatures) && ~loadNormFeatures
-        fprintf('loading back all ORIG features...\n')
-        
-        tic
-        
-        [X_feat,tmpdat] = load_features(featdir,'feat',datasets);
-        evals(tmpdat); % put into environment
-        
-        % save
-        tmp = tmpdat;
-        fprintf('saving info...\n')
-        save(infopath,'-append','-struct','tmp')
-        clear tmp tmpdat
-        
-        toc
-    end
-    
+    % save the processing info
+    save(infopath,'-struct','tmpdat')
     
     % normalize them
-    featdir2 = [featdir '_norm'];
-    if ~exist(featdir2); mkdir(featdir2); end
-            
-        
-    if loadNormFeatures
-        fprintf('loading back all NORM features...\n')
-        [X_feat,tmpdat] = load_features(featdir2,'feat',datasets);
-    else
-        % normalize
+    if ecfg.normFeatures>0
         fprintf('normalizing...\n')
-        
         tic
-        if 0 % independent norm
+        if ecfg.normFeatures==1 % independent norm
             if 1
                 X_feat = zscore_robust(X_feat);
             elseif 0
@@ -237,141 +133,132 @@ if getFeatures
             else
                 X_feat = X_feat - nanmean(X_feat);
             end
-        else % set norm
-            Xtmp = X_feat;
+        elseif ecfg.normFeatures==2 % set norm
             for jj=1:numel(ifeat)
                 tmp = X_feat(:,ifeat{jj});
-                mu = nanmedian([tmp(:)]);
-                se = mad([tmp(:)],1,1)*1.4826;
-                tmp = (tmp-mu)./se;
-
-                X_feat(:,ifeat{jj}) = tmp;
+                z = zscore_robust(tmp,[],'all');
+                X_feat(:,ifeat{jj}) = z;
             end
-            clear Xtmp
+        else
+            error('huh?')
         end
         toc
 
         % resave
         tic
-        fprintf('resaving each one')
+        fprintf('resaving each one: ')
         for id=1:numel(datasets)
             name = datasets(id).name;
             %fprintf('%g: %s\n',id,name)
             fprintf('%g,',id)
 
-            name_in = [featdir '/' name(1:end-4) '_feat.mat'];
+            name_in = [featdir '/' name '_feat.mat'];
             tmp_in = load(name_in);    
-            
+
             % resave
             x = X_feat(idat==id,:);
-            
+
             tmp_out = tmp_in;
             tmp_out.X_feat = x;
-            
-            name_out = [featdir2 '/' name(1:end-4) '_feat.mat'];
+
+            name_out = [featdir_norm '/' name '_feat.mat'];
             parsave(name_out,tmp_out)
         end
         fprintf('\n')
-        toc
+        toc    
     end
-end
-
-
-%% select training samples
-if prepTraining
-
-    % prep
-    V = nan(size(frame));
-    for id=1:max(idat)
-        sel = idat==id;
-        tmpf = frame(sel);
-        tmpc = com(sel,:);
-
-        dt = diff(tmpf/30);
-        d = diff(tmpc,[],1);
-        v = sqrt(sum(d.^2,2)) ./ dt;
-        v = [0; smooth(v,5)];
-        V(sel) = v;
-    end
-
-    H = com(:,2);
-
-    % init indices
-    idx = 1:6:numel(frame);
-
-    % oversample rare events 
-    if 1
-        tmpfs = 1;
-
-        %samples with high speed
-        selv = V > 2;
-        [st,fn] = find_borders(selv);
-        tooShort = (fn-st)<2; st(tooShort) = []; fn(tooShort) = [];
-        st = max(st - 2,1); fn = min(fn + 2,numel(v));
-        for is=1:numel(st); selv(st(is):tmpfs:fn(is)) = 1; end
-
-        % on the wall
-        selh = H > 3;
-        [st,fn] = find_borders(selh);
-        tooShort = (fn-st)<2; st(tooShort) = []; fn(tooShort) = [];
-        st = max(st - 2,1); fn = min(fn + 2,numel(v));
-        for is=1:numel(st); selh(st(is):tmpfs:fn(is)) = 1; end
-
-        % final 
-        selnew = selv | selh;
-        idx = [idx, find(selnew)'];
+else 
+    fprintf('reloading features... \n')
+    
+    % load data info
+    load(infopath)
+    
+    % load features
+    if ecfg.normFeatures>0
+        tmpdir = featdir_norm;
+    else
+        tmpdir = featdir;
     end
     
-    % final
-    idx_train = unique(idx);
-    X_feat_train = X_feat(idx_train,:);
-    idat_train = idat(idx_train);
-    frame_train = frame(idx_train);
+    [X_feat,tmpdat] = load_features(tmpdir,'feat',datasets);
+    evals(tmpdat); % put into environment
+end    
 
-    % save
-    save(infopath,'-append','idx_train')
-end
-
-
+%embed+clust
+%{
 %% run embedding
-if runEmbedding
+if ecfg.embed
+    if ecfg.train
 
-    % fit
-    cfg = [];
-    cfg.anadir = anadir;
-    cfg.nparallel = 0;
-    cfg.fs = 30;
-    cfg.presave = 0;
-    cfg.group = idat_train;
-    cfg.train = 1;
-    cfg.pca_indiv = 0;
-    cfg.pca_global = 0;
-    cfg.group_ica = 0;
-    cfg.wvt = 0;
-    cfg.wvt_pca = 0;
-    cfg.umap = 1;
-        cfg.umap_class = 'umap';
-        %cfg.umap_cfg.random_state = 42;
-        cfg.umap_cfg.min_dist = 0.1; % 0.1, 0.001, 0.0001
-        cfg.umap_cfg.n_neighbors = 200; % 20 10 5
-        cfg.umap_cfg.metric = 'euclidean';
-        cfg.umap_cfg.densmap = false;
+        % ----------------------------------------------------
+        % select training samples
+
+        % prep
+        V = nan(size(frame));
+        for id=1:max(idat)
+            sel = idat==id;
+            tmpf = frame(sel);
+            tmpc = com(sel,:);
+
+            dt = diff(tmpf/30);
+            d = diff(tmpc,[],1);
+            v = sqrt(sum(d.^2,2)) ./ dt;
+            v = [0; smooth(v,5)];
+            V(sel) = v;
+        end
+
+        H = com(:,2);
+
+        % init indices
+        idx = 1:6:numel(frame);
+
+        % oversample rare events 
+        if 1
+            tmpfs = 1;
+
+            %samples with high speed
+            selv = V > 2;
+            [st,fn] = find_borders(selv);
+            tooShort = (fn-st)<2; st(tooShort) = []; fn(tooShort) = [];
+            st = max(st - 2,1); fn = min(fn + 2,numel(v));
+            for is=1:numel(st); selv(st(is):tmpfs:fn(is)) = 1; end
+
+            % on the wall
+            selh = H > 3;
+            [st,fn] = find_borders(selh);
+            tooShort = (fn-st)<2; st(tooShort) = []; fn(tooShort) = [];
+            st = max(st - 2,1); fn = min(fn + 2,numel(v));
+            for is=1:numel(st); selh(st(is):tmpfs:fn(is)) = 1; end
+
+            % final 
+            selnew = selv | selh;
+            idx = [idx, find(selnew)'];
+        end
+
+        % final
+        idx_train = unique(idx);
+        X_feat_train = X_feat(idx_train,:);
+        idat_train = idat(idx_train);
+        frame_train = frame(idx_train);
+
+        % save
+        save(infopath,'-append','idx_train')
         
-        %cfg.umap_cfg.negative_sample_rate = 20;
-        %cfg.umap_cfg.repulsion_strength = 10;
-        cfg.umap_cfg.set_op_mix_ratio = 0.25;
-        %cfg.umap_cfg.target = targ;
-        %cfg.umap_cfg.n_components = 3;
-        cfg.umap_cfg.n_epochs = 200;
-        %cfg.umap_cfg.init = 'spectral'; %random
-    cfg.cluster = 1;
-        cfg.cluster_method = 'WATERSHED';
+        % ----------------------------------------------------
+        % run emebdding
 
-    [Y_train,embedInfo] = embed_pose2(X_feat_train,cfg);
-end
-
-%% re-embed
-if doRembed
+        cfg = [];
+        cfg.anadir = anadir;
+        cfg.min_dist = 0.1; % 0.1, 0.001, 0.0001
+        cfg.n_neighbors = 200; % 20 10 5
+        cfg.metric = 'euclidean';
+        cfg.set_op_mix_ratio = 0.25;
+        cfg.n_epochs = 200;
+            
+        [Y,procInfo] = call_umap(X,cfg);
+    end
+    
+    % now re-embed
     % load back cfg, to make sure its the same
     embedInfo = load([anadir '/procInfo_train.mat']);
 
@@ -382,15 +269,68 @@ if doRembed
     cfg.anadir = anadir;
     cfg.train = 0;
     cfg.group = idat;
-    cfg.umap_cfg.knntype = 'faiss'; % mat, faiss
-        cfg.umap_cfg.useGPU = true; % mat, faiss
+    cfg.knntype = 'faiss'; % mat, faiss
+        cfg.useGPU = true; % mat, faiss
         
-    xpath = dir([featdir2 '/*.mat']);
-    xpath = cellfun(@(x) sprintf('%s/%s_feat.mat',featdir2,x(1:end-4)),{datasets.name},'un',0);
+    xpath = dir([featdir_norm '/*.mat']);
+    xpath = cellfun(@(x) sprintf('%s/%s_feat.mat',featdir_norm,x(1:end-4)),{datasets.name},'un',0);
     [Y_test,embedInfo_test] = embed_pose2(xpath,cfg,embedInfo);
     
     toc
     
+end
+
+
+%% cluster
+if cfg.cluster
+    if cfg.train
+        fprintf('clustering via %s\n',cfg.cluster_method)
+        
+        tic
+        [clabels, Ld, Lbnds,outClust] = examine_clusters(Y, cfg.cluster_method);
+        toc
+        
+        sname = [anadir '/cluster_train.mat'];
+        save(sname,'clabels','Ld', 'Lbnds','outClust')
+    else
+        fprintf('clustering test data using KNN...\n')
+        
+        tic
+        % test data
+        cluster_train = load([anadir '/cluster_train.mat']);
+        umap_test = load([anadir '/umap_test.mat']);
+        umap_train = load([anadir '/umap_train.mat']);
+        Y = umap_test.embedding_;
+        Y_train = umap_train.embedding_;
+        
+        % find the state labels
+        fprintf('\t finding state labels...\n')
+        xv = cluster_train.outClust.xv;
+        yv = cluster_train.outClust.yv;
+
+        if 0
+            clabels_test = double(interp2(xv,yv,cluster_train.Ld,Y(:,1),Y(:,2),'nearest'));
+        else
+            IDX = knnsearch(Y_train,Y,'K',10);
+            clabels_test = cluster_train.clabels(IDX);
+            clabels_test = mode(clabels_test,2);
+        end
+
+        % get heatmap again
+        fprintf('\t getting density estimate...\n')
+        [tmp1,tmp2] = meshgrid(xv,yv);
+        [dens, ~, bw] = ksdens(Y,[tmp1(:) tmp2(:)]);
+       
+        fprintf('\t saving cluster info...\n')
+        cluster_test = cluster_train;
+        cluster_test.clabels = clabels_test;
+        cluster_test.outClust.dens2 = dens;
+
+        sname = [anadir '/cluster_test.mat'];
+        save(sname,'-struct','cluster_test')
+
+        toc
+    end
 end
 
 
@@ -405,10 +345,10 @@ if plotEmbedding
 
     strs = {'train','test'};
 
-    if strcmp(monk,'wo')
-        thisPlot = 2;
-    else
+    if ecfg.train
         thisPlot = 1:2;
+    else
+        thisPlot = 2;
     end
 
     % plot
@@ -526,26 +466,26 @@ if makeExampleVideos
     
     fprintf('TOTAL VIDEO TIME: %g',toc(ST))
 end
-
+%}
 
 %% //////////////////////////////////////////////////////////////////////
 % ////////////////////          MISC            /////////////////////////
 % //////////////////////////////////////////////////////////////////////
 
-function [out,procInfo] = run_proc(name,datadir,featdir,theseFeatures,theseFeatures2,procInfo)
+function [out,featInfo] = run_proc(name,datadir,featdir,theseFeatures,theseFeatures2,featInfo)
 
 folds = {'data_ground','data_scale'};
 
 % load
 in = [];
 for ii=1:numel(folds)
-    tmp = load([datadir '/' folds{ii} '/' name]);
+    tmp = load([datadir '/' folds{ii} '/' name '_proc.mat']);
     in = cat(1,in,tmp);
 end
 
 % process
-[xf,feat_labels,ifeat,procInfo{1}] = build_pose_features_new(in(1).data_proc,theseFeatures,procInfo{1});
-[xf2,feat_labels2,ifeat2,procInfo{2}] = build_pose_features_new(in(2).data_proc,theseFeatures2,procInfo{2});
+[xf,feat_labels,ifeat,featInfo{1}] = build_pose_features_new(in(1).data_proc,theseFeatures,featInfo{1});
+[xf2,feat_labels2,ifeat2,featInfo{2}] = build_pose_features_new(in(2).data_proc,theseFeatures2,featInfo{2});
 
 % combine
 X_feat = [xf, xf2];
@@ -560,13 +500,13 @@ out.ifeat = ifeat;
 out.frame = in(1).data_proc.frame;
 out.com = in(1).data_proc.com;
 out.info = in(1).data_proc.info;
-out.procInfo = procInfo;
+out.featInfo = featInfo;
 out.ifeat = ifeat;
 out.data = in;
 out.labels = in(1).data_proc.labels;
 
 tmp = rmfield(out,'data');
-sname = [featdir '/' name(1:end-4) '_feat.mat'];
+sname = [featdir '/' name '_feat.mat'];
 parsave(sname,tmp)
 
 

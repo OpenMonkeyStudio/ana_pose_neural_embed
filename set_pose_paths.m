@@ -1,5 +1,5 @@
-function [parentdir,jsondir,pyenvpath,rpath] = set_pose_paths(addCode)
-% [parentdir,jsondir,pyenvpath,rpath] = set_pose_paths(addCode)
+function [parentdir,jsondir,pyenvpath,rpath,binpath,codepath] = set_pose_paths(addCode)
+% [parentdir,jsondir,pyenvpath,rpath,binpath,codepath] = set_pose_paths(addCode)
 %
 % adjust paths here to fit your local machine
 
@@ -15,6 +15,8 @@ c = computer;
 if strcmp(c,'PCWIN64')
     u = getenv('USERNAME');
 else
+    [~,h] = system('hostname');
+    h(end)=[];
     u = getenv('USER');
 end
 
@@ -22,22 +24,34 @@ end
 if strcmp(c,'MACI64') && strcmpi(u,'ben') %BV
     %parentdir = '/Volumes/DATA_bg/ana'; 
     %jsondir = '/Volumes/DATA_bg/Data_json_new';
-    parentdir = '/Volumes/SSD_Q/P_embedding';
-    jsondir = '/Volumes/SSD_Q/P_embedding/Data_json_annot';
+    parentdir = '/Volumes/SSD_Q';
+    jsondir = '/Volumes/SSD_Q/Data_json_annot';
     pyenvpath = '/Users/ben/embed/bin/python3';
     rpath = '/usr/local/bin/Rscript';
-elseif strcmp(c,'GLNXA64') && strcmp(u,'auser') %freyr
+    binpath = '/usr/local/bin';
+    codepath = '/Users/Ben/Documents/git/oms_internal';
+elseif strcmp(c,'GLNXA64') && strcmp(h,'freyr') %freyr
     parentdir = '/mnt/scratch/BV_embed';
-    %jsondir = '/mnt/scratch/BV_embed/Data_all';
-    %jsondir = '/mnt/scratch/BV_embed/Data_json_new';
     jsondir = '/mnt/scratch/BV_embed/Data_json_annot';
-    pyenvpath='/home/auser/miniconda3/bin/python';
+    %pyenvpath='/home/auser/miniconda3/bin/python';
+    pyenvpath='/home/auser/miniconda3/envs/bv/bin/python';
     rpath = 'Rscript';
-elseif strcmp(c,'GLNXA64') && strcmp(u,'zlab_recon') %loki
+    binpath = '/usr/bin';
+    codepath = '/mnt/scratch/git/oms_internal';
+elseif strcmp(c,'GLNXA64') && strcmp(h,'vidar') %vidar
+    parentdir = '/mnt/scratch3/BV_embed';
+    jsondir = '/mnt/scratch3/BV_embed/Data_json_annot';
+    pyenvpath='/home/zlab_recon/miniconda3/envs/bv/bin/python';
+    rpath = 'Rscript';
+    binpath = '/usr/bin';
+    codepath = '/mnt/scratch3/git/oms_internal';
+elseif strcmp(c,'GLNXA64') && strcmp(h,'loki') %loki
     parentdir = '/mnt/scratch/BV_embed';
     jsondir = '/mnt/scratch/BV_embed/Data_json_new';
-    pyenvpath = '';
+    pyenvpath = '/home/zlab_recon/miniconda3/envs/bv/bin/python3';
     rpath = '';
+    binpath = '/usr/bin';
+    codepath = '/mnt/scratch/git/oms_internal';
 else
     error('cant figure out the comp!')
 end

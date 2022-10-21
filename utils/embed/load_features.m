@@ -8,10 +8,10 @@ fn = 0;
 out = struct('frame',nan(nsmp_tot,1),'idat',nan(nsmp_tot,1),'com',nan(nsmp_tot,3));
 
 % load
-fprintf('loading features')
+fprintf('loading features, ndata=%g\n%s\n',numel(datasets),featdir)
 for ii=1:numel(datasets)
-    fprintf('%g, ',ii)
-    name = datasets(ii).name(1:end-4); 
+    fprintf('%g,',ii)
+    name = datasets(ii).name; 
     sname = [featdir '/' name '_' suffix '.mat'];
 
     % load
@@ -41,3 +41,8 @@ out.idat(fn+1:end,:) = [];
 % finish
 out.feat_labels = in.feat_labels;
 out.ifeat = in.ifeat;
+out.datasets = datasets;
+out.labels = in.labels;
+out.featInfo = in.featInfo;
+out.info = in.info;
+
