@@ -38,15 +38,7 @@ posedir = [datadir '/Data_proc_13joint/data_ground'];
 fs_new = 30;
 
 % get datasets
-if strcmp(monk,'yo')
-    %s = [get_code_path() '/bhv_cluster/data_log_yoda_ephys_bv.xlsx'];
-    s = [get_code_path() '/bhv_cluster/data_log_yoda_ephys.xlsx'];
-else
-    s = [get_code_path() '/bhv_cluster/data_log_woodstock_ephys.xlsx'];
-end
-taskInfo = readtable(s);
-d = taskInfo.name;
-%d=d(10);
+[d,taskInfo] = get_datasets(monk);
 
 % loop over datasets
 workerIndices = splitjobs('none',1:numel(d),numlabs);
@@ -54,8 +46,7 @@ IDX = workerIndices{labindex};
 
 BAD = {};
 for id=IDX
-    %name = d(id).name;
-    name = d{id};
+    name = d(id).name;
     fprintf('%g: %s\n',id,name)
     
     % get evt regressors
