@@ -28,22 +28,10 @@ if ~exist(sdfpath_data); mkdir(sdfpath_data); end
 % datasets
 [datasets,taskInfo] = get_datasets(monk);
 
-if 0
-    tmp = {
-        'yo_2021-02-23_01_enviro'
-        'yo_2021-02-28_01_enviro'
-        'yo_2021-03-23_01_enviro'
-        'yo_2021-04-12_01_enviro'
-        'yo_2021-04-16_01_enviro'
-        'yo_2021-05-13_01_enviro'
-        'yo_2021-05-15_01_enviro'
-        };
-    datasets = struct('name',tmp);
-end
 
 %% get SDF for each cell    
-startTime = tic;
-ignore_warnings = {'MATLAB:singularMatrix','stats:LinearModel:RankDefDesignMat'};
+%ignore_warnings = {'MATLAB:singularMatrix','stats:LinearModel:RankDefDesignMat','FieldTrip:ft_spikedensity:ft_checkconfig'};
+ignore_warnings = {'all'};
 for iw=1:numel(ignore_warnings); warning('off',ignore_warnings{iw}); end
 
 % start parallel pool
