@@ -14,4 +14,4 @@ end
 taskInfo = readtable(s);
 datasets = struct('name',taskInfo.name);
 
-datasets = datasets(8:18); % testing
+%datasets = datasets(8:18); % testing

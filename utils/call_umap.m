@@ -1,4 +1,4 @@
-function [Y,procInfo] = call_umap(X,cfg)
+function [Y,umap_cfg] = call_umap(X,cfg)
 
 % checks
 cfg = checkfield(cfg,'anadir','needit');
@@ -7,7 +7,7 @@ cfg = checkfield(cfg,'anadir','needit');
 anadir = cfg.anadir;
 
 % define paths
-[~,~,pyenvpath] = set_pose_paths(0);
+[~,~,pyenvpath,~,~,codepath] = set_pose_paths(0);
 
 
 % save input
@@ -41,7 +41,7 @@ savepath = anadir;
 fprintf('\t presaving for transfer \n')
 save(name_in,'-struct','umap_cfg','-v7.3')
 
-func = [get_code_path() '/bhv_cluster/matlab/python/call_umap.py'];
+func = [codepath '/python/call_umap.py'];
 
 commandStr = sprintf('%s %s %s %s',pyenvpath,func,name_in,savepath);
 fprintf('\t executing: %s \n',commandStr)
@@ -61,6 +61,7 @@ toc
 % load back
 umap_train = load([savepath '/umap_train.mat']);
 Y = umap_train.embedding_;        
+umap_cfg = rmfield(umap_train,'embedding_');
 
 % % udpate
 % delThis = {'embedding_','graph_','graph_dists_',};

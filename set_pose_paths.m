@@ -22,8 +22,6 @@ end
 
 % paths
 if strcmp(c,'MACI64') && strcmpi(u,'ben') %BV
-    %parentdir = '/Volumes/DATA_bg/ana'; 
-    %jsondir = '/Volumes/DATA_bg/Data_json_new';
     parentdir = '/Volumes/SSD_Q';
     jsondir = '/Volumes/SSD_Q/Data_json_annot';
     pyenvpath = '/Users/ben/embed/bin/python3';
@@ -33,11 +31,11 @@ if strcmp(c,'MACI64') && strcmpi(u,'ben') %BV
 elseif strcmp(c,'GLNXA64') && strcmp(h,'freyr') %freyr
     parentdir = '/mnt/scratch/BV_embed';
     jsondir = '/mnt/scratch/BV_embed/Data_json_annot';
-    %pyenvpath='/home/auser/miniconda3/bin/python';
     pyenvpath='/home/auser/miniconda3/envs/bv/bin/python';
     rpath = 'Rscript';
     binpath = '/usr/bin';
-    codepath = '/mnt/scratch/git/oms_internal';
+    %codepath = '/mnt/scratch/git/oms_internal';
+    codepath = '/mnt/scratch/git/ana_pose_neural_embed';
 elseif strcmp(c,'GLNXA64') && strcmp(h,'vidar') %vidar
     parentdir = '/mnt/scratch3/BV_embed';
     jsondir = '/mnt/scratch3/BV_embed/Data_json_annot';

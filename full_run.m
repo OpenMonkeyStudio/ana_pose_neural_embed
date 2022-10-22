@@ -63,12 +63,16 @@ if runEmbeddingTrain
     ecfg.monk = 'yo';
     ecfg.nparallel = 15;
 
-    ecfg.train = 1;
-    ecfg.baseDataset = 'yo_2021-02-25_01_enviro';
-    ecfg.calcFeatures = 0;
-    ecfg.normFeatures = 2;
-    ecfg.embed = 1;
-    ecfg.cluster = 1;
+    ecfg.calc_features = 0;
+        ecfg.base_dataset = 'yo_2021-02-25_01_enviro';
+        ecfg.normtype = 2;
+    ecfg.embedding_train = 1;
+    ecfg.embedding_test = 1;
+        ecfg.knntype = 'faiss';
+        ecfg.K = 20;
+    ecfg.cluster_train = 1;
+        ecfg.cluster_method = 'WATERSHED';
+    ecfg.cluster_test = 1;
 
     embed_pose(ecfg);
 end
