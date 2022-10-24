@@ -5,12 +5,11 @@ from scipy.io import loadmat, savemat
 import numpy as np
 # from sklearn.cluster import AgglomerativeClustering
 from sknetwork.clustering import Louvain, modularity
-from sknetwork.hierarchy import Paris, tree_sampling_divergence, dasgupta_score
+from sknetwork.hierarchy import Paris, tree_sampling_divergence, dasgupta_score, cut_straight
 
 from scipy.sparse import csr_matrix
 import sys
-
-# import mat73
+import mat73
 
 
 
@@ -70,24 +69,22 @@ def fit_paris():
     foo=1
 
     X = dat_in['po']
-    tmp = X.shape
-    nsmp = tmp[0]
-    # n = tmp[0]
-    # if len(tmp)==2:
-    #     nsmp = 1
-    # else:
-    #     nsmp = tmp[2]
+    nsmp = len(X)
 
     # loop through each sample
     dend = []
     TSD = []
     DGS = []
+    CUTS_lab = [];
+    CUTS_n = [];
+    MOD = []
+
     for ismp in range(0, nsmp):
         if ismp % np.ceil(nsmp * 0.1) == 0:
             print('%d %%' % (ismp / nsmp * 100))
-        # xtmp = X[:, :, ismp]
         xtmp = X[ismp]
         sz = xtmp.shape
+
         # reformat
         row = []
         col = []
@@ -102,25 +99,40 @@ def fit_paris():
                 # edges.append((ii + 1, jj + 1, 1))
         C = csr_matrix((data, (row, col)), shape=sz)
 
-
         # paris
-        # from IPython.display import SVG
-        # from sknetwork.visualization import svg_graph, svg_digraph, svg_bigraph, svg_dendrogram
         paris = Paris()
         d = paris.fit_transform(C)
-        # louvain_hierarchy = LouvainHierarchy()
-        # d = louvain_hierarchy.fit_transform(C)
+        
+        # make multiple cuts
+        ncut = range(2,sz[0]);
+        cutlab = [];
+        mod = [];
+        for nc in ncut:
+            # make a cut
+            lab = cut_straight(d,n_clusters=nc)
+            cutlab.append(lab)
+
+            # modularity
+            m = modularity(C, lab)
+            mod.append(m)
 
         # store
         dend.append(d)
         TSD.append(tree_sampling_divergence(C,d))
         DGS.append(dasgupta_score(C,d))
+        CUTS_lab.append(cutlab)
+        CUTS_n.append(ncut)
+        MOD.append(mod)
+        
 
     # save
     out = {
-        'dendogram':dend,
+        'dendrogram':dend,
         'tree_sampling_divergence':TSD,
-        'dasgupta_score':DGS
+        'dasgupta_score':DGS,
+        'modularity':MOD,
+        'ncut': CUTS_n,
+        'labels_cut':CUTS_lab
     }
     savemat(name_out, out)
 
@@ -190,26 +202,15 @@ def get_metrics():
 
 if __name__ == '__main__':
     # laod data
-    if True:
-        func = sys.argv[1]
-        dataname = sys.argv[2]
-        savepath = sys.argv[3]
-    else: #debugging
-        # func = 'fit_louvain'
-        # dataname = '/Volumes/SSD_Q/P_embedding/embed_rhesus_jointAngle_vcom_pcom_preAlignPose_pca/modularity/po_obs'
-        func = 'fit_paris'
-        dataname = '/Volumes/SSD_Q/P_embedding/embed_rhesus_jointAngle_vcom_pcom_preAlignPose_pca/modularity/po_obs_hier'
-        savepath = '/Volumes/SSD_Q/P_embedding/embed_rhesus_jointAngle_vcom_pcom_preAlignPose_pca/modularity'
+    name_in = sys.argv[1]
+    name_out = sys.argv[2]
 
-    # format in and out data names
-    name_in = '{}_in.mat'.format(dataname)
-    name_out = '{}_out.mat'.format(dataname)
+    dat_in = mat73.loadmat(name_in)
 
-    dat_in = loadmat(name_in, squeeze_me=True)
-    #dat_in = mat73.loadmat(name_in)
+    func = dat_in['func']
 
     # call
-    print('data: {}'.format(dataname))
+    print('data: {}'.format(name_in))
     if func == 'fit_louvain':
         print('fitting with Louvain...')
         fit_louvain()

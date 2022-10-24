@@ -21,7 +21,7 @@ if __name__ == '__main__':
     K = int(dat_in['K'])
     metric = dat_in['metric']
     useGPU = dat_in['useGPU']
-
+    gpus = dat_in['gpus']
     
     X = np.ascontiguousarray(X).astype(np.float32)
 
@@ -41,10 +41,12 @@ if __name__ == '__main__':
         index1 = faiss.index_factory(d, "Flat")
 
     # CPU or gpu index?
-    if useGPU:
-        res = faiss.StandardGpuResources()  # use a single GPU
-        #index = faiss.index_cpu_to_gpu(res, 0, index1)
-        index = faiss.index_cpu_to_all_gpus(index1)
+    if useGPU > 0:
+        if useGPU==1:
+            res = faiss.StandardGpuResources()  # use a single GPU
+            index = faiss.index_cpu_to_gpu(res, 0, index1)
+        else:
+            index = faiss.index_cpu_to_all_gpus(index1)
     else:
         index = index1
         index.parallel_mode = 1

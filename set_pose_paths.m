@@ -1,5 +1,5 @@
-function [parentdir,jsondir,pyenvpath,rpath,binpath,codepath] = set_pose_paths(addCode)
-% [parentdir,jsondir,pyenvpath,rpath,binpath,codepath] = set_pose_paths(addCode)
+function [parentdir,jsondir,pyenvpath,rpath,binpath,codepath,ephyspath] = set_pose_paths(addCode)
+% [parentdir,jsondir,pyenvpath,rpath,binpath,codepath,ephyspath] = set_pose_paths(addCode)
 %
 % adjust paths here to fit your local machine
 
@@ -36,6 +36,7 @@ elseif strcmp(c,'GLNXA64') && strcmp(h,'freyr') %freyr
     binpath = '/usr/bin';
     %codepath = '/mnt/scratch/git/oms_internal';
     codepath = '/mnt/scratch/git/ana_pose_neural_embed';
+    ephyspath = '/mnt/scratch/git/oms_internal/ephys/docs';
 elseif strcmp(c,'GLNXA64') && strcmp(h,'vidar') %vidar
     parentdir = '/mnt/scratch3/BV_embed';
     jsondir = '/mnt/scratch3/BV_embed/Data_json_annot';
@@ -43,6 +44,7 @@ elseif strcmp(c,'GLNXA64') && strcmp(h,'vidar') %vidar
     rpath = 'Rscript';
     binpath = '/usr/bin';
     codepath = '/mnt/scratch3/git/oms_internal';
+    ephyspath = '/mnt/scratch3/git/oms_internal/ephys/docs';
 elseif strcmp(c,'GLNXA64') && strcmp(h,'loki') %loki
     parentdir = '/mnt/scratch/BV_embed';
     jsondir = '/mnt/scratch/BV_embed/Data_json_new';
@@ -50,6 +52,7 @@ elseif strcmp(c,'GLNXA64') && strcmp(h,'loki') %loki
     rpath = '';
     binpath = '/usr/bin';
     codepath = '/mnt/scratch/git/oms_internal';
+    ephyspath = '/mnt/scratch/git/oms_internal/ephys/docs';
 else
     error('cant figure out the comp!')
 end

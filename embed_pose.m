@@ -249,7 +249,6 @@ if ecfg.embedding_train
     %frame_train = frame(idx_train);
 
     % save
-    fprintf('\t saving training data... \n')
     save(infopath,'-append','idx_train')
     toc
 
@@ -293,7 +292,7 @@ if ecfg.embedding_test
         dat.Xq = Xq;
         dat.K = ecfg.K;
         dat.metric = ucfg.metric;
-        dat.useGPU = 1;
+        dat.useGPU = 1; % 1=single core, 2=all cores
 
         opts = [];
         opts.func = [codepath '/python/call_knnsearch.py'];
@@ -397,7 +396,7 @@ fprintf('\n TOTAL TIME: %g\n', toc(START))
 
 %% plot embedding results
 if ecfg.plot_embedding
-    fprintf('\nplotting...')
+    fprintf('\n plotting...\n')
     figure
     %[nr,nc] = subplot_ratio(max(idat2)*2);
     nr = 3; nc = 2;

@@ -1,4 +1,4 @@
-function get_matched_sdf(anadir,monk)
+function sdfInfo = get_matched_sdf(anadir,monk)
 % get_matched_sdf(anadir,monk)
 
 % settings
@@ -28,6 +28,14 @@ if ~exist(sdfpath_data); mkdir(sdfpath_data); end
 % datasets
 [datasets,taskInfo] = get_datasets(monk);
 
+% prep output
+sdfInfo = [];
+sdfInfo.sdfpath = sdfpath;
+sdfInfo.sdfpath_data = sdfpath_data;
+sdfInfo.datasets = datasets;
+
+sname = [anadir '/sdfInfo.mat'];
+save(sname,'-struct','sdfInfo')
 
 %% get SDF for each cell    
 %ignore_warnings = {'MATLAB:singularMatrix','stats:LinearModel:RankDefDesignMat','FieldTrip:ft_spikedensity:ft_checkconfig'};
