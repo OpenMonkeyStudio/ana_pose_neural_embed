@@ -17,7 +17,7 @@ runSdfMatching = 0;
 runEmbeddingTrain = 0;
 runEmbeddingTest = 0;
 
-runGraphCluster = 1;
+runGraphCluster = 0;
 
 % prepare paths
 anadirs = {};
@@ -43,8 +43,10 @@ end
 
 % first, extract all regressors
 if runRegressors
-    BAD_yo = get_all_regressors('yo',datadir);
-    BAD_wo = get_all_regressors('wo',datadir);
+    BAD_reg = {};
+    for im=1:numel(monks)
+    	BAD_reg{im} = get_all_regressors(monks{im},datadir);
+    end
 end
 
 % now, get neural time series for each cell
@@ -146,6 +148,50 @@ load_pose_neural_data
 % embedding analysis
 %ana_mod_hierarchy
 
-% neural analysis
 
+% ------------------------------------------------------------
 % embedding+neural analysis
+
+% action encoding
+cfg = [];
+cfg.sdfpath = sdfpath;
+cfg.figdir = figdir;
+cfg.datasets = datasets;
+cfg.nstate = nstate;
+cfg.fs_frame = fs_frame;
+cfg.uarea = uarea;
+cfg.get_encoding = 1;
+    cfg.testtype = 'kw';
+    cfg.nrand = 20;
+    cfg.nboot = 1;
+    cfg.eng_lim = [3, ceil(1*cfg.fs_frame)];
+    cfg.ilag = 1;
+    cfg.theseCuts = [2:8 10:2:20 23:3:31, nstate];
+
+out_encode = ana_action_encoding(cfg,SDF,res_mod,C,iarea,idat);
+
+% switch sdf
+cfg = [];
+cfg.sdfpath = sdfpath;
+cfg.figdir = figdir;
+cfg.datasets = datasets;
+cfg.fs_frame = fs_frame;
+cfg.uarea = uarea;
+
+cfg.only_nonengage = 0;
+cfg.seg_lim = [-1 1];
+cfg.seg_min = 0.2;
+cfg.eng_smooth = 1;
+
+cfg.avgtype = 'median';
+cfg.normtype = 'presegnorm';
+cfg.weighted_mean = 0;
+
+out_switch = ana_switch_sdf(cfg,SDF,C,frame,iarea,idat);
+
+% switch sdf + controls 
+cfg.only_nonengage = 1;
+cfg.weighted_mean = 1;
+out_switch2 = ana_switch_sdf(cfg,SDF,C,frame,iarea,idat);
+  
+    
