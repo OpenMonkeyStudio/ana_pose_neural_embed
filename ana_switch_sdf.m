@@ -1,9 +1,25 @@
-function out = ana_switch_sdf(cfg,SDF,C,frame,iarea,idat)
+function out = ana_switch_sdf(cfg,varargin)
+% out = ana_switch_sdf(cfg,SDF,C,frame,iarea,idat)
+% out = ana_switch_sdf(cfg,RES_seg)
 
-cfg = checkfield(cfg,'sdfpath','needit');
+% prep
+if nargin <= 2
+    calcSeg = 0;
+    RES_seg = varargin{1};
+else
+    calcSeg = 1;
+
+    SDF = varargin{1};
+    C = varargin{2};
+    frame = varargin{3};
+    iarea = varargin{4};
+    idat = varargin{5};
+end
+
+% checks
+cfg = checkfield(cfg,'sdfpath','');
 cfg = checkfield(cfg,'figdir','needit');
-cfg = checkfield(cfg,'datasets','needit');
-cfg = checkfield(cfg,'nstate',max(C));
+cfg = checkfield(cfg,'datasets','');
 cfg = checkfield(cfg,'fs_frame',30);
 cfg = checkfield(cfg,'nparallel',15);
 cfg = checkfield(cfg,'uarea','needit');
@@ -39,109 +55,110 @@ spkparentpath = fileparts(fileparts(sdfpath));
 %% peri-transition PSTHs
 %strs1 = {'all','nonengage'};
 %sname = sprintf('%s/sdf_switch_%s.mat',sdfpath,strs1{onlyNonEngage+1});
+if calcSeg
+    RES_seg = [];
+    % get all segments
+    fprintf('getting segs: ')
+    for id=1:numel(datasets)
+        name = datasets(id).name;
+        fprintf('%g,',id);
 
-RES_seg = [];
-% get all segments
-fprintf('getting segs: ')
-for id=1:numel(datasets)
-    name = datasets(id).name;
-    fprintf('%g,',id);
+        % get SDF
+        day = datestr( name(4:end-10) );
+        selsdf = ismember({SDF.day},day);
+        sdf = SDF(selsdf);
 
-    % get SDF
-    day = datestr( name(4:end-10) );
-    selsdf = ismember({SDF.day},day);
-    sdf = SDF(selsdf);
+        % concate rates
+        Xs = cat(1,sdf.sdf);
 
-    % concate rates
-    Xs = cat(1,sdf.sdf);
+        % get state stuff
+        sel = idat==id;
+        c = C(sel);
+        f = frame(sel);
 
-    % get state stuff
-    sel = idat==id;
-    c = C(sel);
-    f = frame(sel);
+        % state indices
+        istate = find( diff(c)~=0 );
 
-    % state indices
-    istate = find( diff(c)~=0 );
+        % get rid of too short segs
+        d = [diff(istate); numel(c) - istate(end)+1];
+        tooShort = d < minSeg*fs_frame;
+        istate(tooShort) = [];
 
-    % get rid of too short segs
-    d = [diff(istate); numel(c) - istate(end)+1];
-    tooShort = d < minSeg*fs_frame;
-    istate(tooShort) = [];
+        % create indices
+        s1 = abs(lim(1)*fs_frame);
+        s2 = abs(lim(2)*fs_frame);
+        istate(istate <= s1) = [];
+        istate(istate + s2 > numel(c)) = [];
 
-    % create indices
-    s1 = abs(lim(1)*fs_frame);
-    s2 = abs(lim(2)*fs_frame);
-    istate(istate <= s1) = [];
-    istate(istate + s2 > numel(c)) = [];
+        idx = -s1:s2;
+        idx = [ repmat(idx,numel(istate),1) + istate ]';
+        idx = [idx(:)];
 
-    idx = -s1:s2;
-    idx = [ repmat(idx,numel(istate),1) + istate ]';
-    idx = [idx(:)];
+        % extract
+        ncell = sum( cellfun(@numel,{sdf.area}) );
+        ndat = numel(istate);
+        nsmp = diff(lim*fs_frame)+1;
 
-    % extract
-    ncell = sum( cellfun(@numel,{sdf.area}) );
-    ndat = numel(istate);
-    nsmp = diff(lim*fs_frame)+1;
+        xs = Xs(:,idx);
+        xs = reshape(xs,[ncell,nsmp,ndat]);
+        S = permute(xs,[3 1 2]);
 
-    xs = Xs(:,idx);
-    xs = reshape(xs,[ncell,nsmp,ndat]);
-    S = permute(xs,[3 1 2]);
+        C_seg = [c(istate), c(istate+1)];
 
-    C_seg = [c(istate), c(istate+1)];
+        %only non-engaged periods?
+        if onlyNonEngage
+            % task engagement
+            datfold = [spkparentpath  '/' name];
+            [eng,f_eng] = get_task_engagement(datfold,smoothWin,f);
 
-    %only non-engaged periods?
-    if onlyNonEngage
-        % task engagement
-        datfold = [spkparentpath  '/' name];
-        [eng,f_eng] = get_task_engagement(datfold,smoothWin,f);
+            % clean
+            idx2 = reshape(idx,nsmp,ndat);
+            badidx = false(size(idx2));
+            badidx(f(idx2) < f_eng(1)) = 1;
+            badidx(f(idx2) > f_eng(end)) = 2;
 
-        % clean
-        idx2 = reshape(idx,nsmp,ndat);
-        badidx = false(size(idx2));
-        badidx(f(idx2) < f_eng(1)) = 1;
-        badidx(f(idx2) > f_eng(end)) = 2;
+            tmpidx = find(ismember(f(idx),f_eng),1);
+            tmpidx = idx(tmpidx);
+            idx2(badidx==1) = tmpidx;
+            idx2(badidx==2) = tmpidx;
 
-        tmpidx = find(ismember(f(idx),f_eng),1);
-        tmpidx = idx(tmpidx);
-        idx2(badidx==1) = tmpidx;
-        idx2(badidx==2) = tmpidx;
+            % find engaged segments
+            tmp = eng(idx2);
+            bad = any( tmp > 0 | badidx~=0 );
 
-        % find engaged segments
-        tmp = eng(idx2);
-        bad = any( tmp > 0 | badidx~=0 );
+            % cull
+            istate(bad) = [];
+            S(bad,:,:) = [];
+            C_seg(bad,:) = [];
+        end
 
-        % cull
-        istate(bad) = [];
-        S(bad,:,:) = [];
-        C_seg(bad,:) = [];
+        % save and store
+        tmp = [];
+        tmp.name = name;
+        tmp.C_seg = C_seg;
+        tmp.seg = S;
+        tmp.area = collapse_areas([sdf.area]);
+
+        RES_seg = cat(1,RES_seg,tmp);
+
+        foo=1;
     end
-
-    % save and store
-    tmp = [];
-    tmp.name = name;
-    tmp.C_seg = C_seg;
-    tmp.seg = S;
-    tmp.area = collapse_areas([sdf.area]);
-
-    RES_seg = cat(1,RES_seg,tmp);
-
-    foo=1;
+    fprintf('\n')
 end
-fprintf('\n')
-    
 
-%% plotting
-
-% prep
+%% PREP
 st = lim(1)*fs_frame;
 fn = lim(2)*fs_frame;
 xtime = [st:fn] ./ fs_frame;
     
+% areas
+a = cat(2,RES_seg.area)';
+[~,iarea] = ismember(a,uarea);
+
 % get mean rate per area
 fprintf('extracting seg means per cell...\n')
 
 MU = [];
-MU2 = [];
 for id=1:numel(RES_seg)
     tmp = RES_seg(id).seg;
     pre = tmp(:,:,xtime<0);
@@ -173,13 +190,6 @@ for id=1:numel(RES_seg)
     mu = squeeze(mu);
 
     MU = cat(1,MU,mu);
-
-    % pure pre/post
-    p1 = nanmean(pre,3);
-    p2 = nanmean(post,3);
-    a = (p2-p1) ./ (p2+p1);
-    a = nanmean(a,1)';
-    MU2 = cat(1,MU2,a);
 end
     
 % clean
@@ -211,7 +221,7 @@ for ii=1:size(MU,2)
 end
 p = bonf_holm(p);
     
-mup = ones(size(xtime)) * max(mu(:)) * 1.05;
+mup = ones(size(xtime)) * max([mu(:)+se(:)]) * 1.05;
 mup(p>0.05) = nan;
 
 subplot(nr,nc,1)
@@ -237,19 +247,18 @@ ylabel([avgtype ' baseline-norm rate'])
 axis square
     
 % plot pre/post
-sel0 = find(xtime==0);
 pre = nanmean(MU(:,xtime < 0),2);
 post = nanmean(MU(:,xtime > 0),2);
-d = post - pre;
-[mu,se] = avganderror_group(iarea,d,avgtype,100);
-[~,T] = kruskalwallis(d,iarea,'off');
+dSeg = post - pre;
+[mu,se] = avganderror_group(iarea,dSeg,avgtype,100);
+[~,T] = kruskalwallis(dSeg,iarea,'off');
 fa = T{2,5};
 pa = T{2,6};
 
 p = [];
 for ia=1:numel(uarea)
     sela = iarea==ia;
-    tmp = d(sela);
+    tmp = dSeg(sela);
     p(ia) = signrank(tmp);
 end
 mup = ones(size(mu)) * max(mu+se)*1.05;
@@ -285,5 +294,6 @@ foo=1;
 out = [];
 out.RES_seg = RES_seg;
 out.cfg = cfg;
+out.MU_seg = MU;
+out.dSeg = dSeg;
 
-    %}

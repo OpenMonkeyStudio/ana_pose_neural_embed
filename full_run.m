@@ -136,62 +136,104 @@ end
 
 
 %% now analysis
+DAT_all = {};
 
-im = 1;
-anadir = anadirs{im};
+for im=1:numel(monks)
+    anadir = anadirs{im};
 
-% load
-load_pose_neural_data
+    % load
+    load_pose_neural_data
 
-% summaries
+    % summaries
 
-% embedding analysis
-%ana_mod_hierarchy
+    % ------------------------------------------------------------
+    % embedding analysis
+    ana_mod_hierarchy
 
 
-% ------------------------------------------------------------
-% embedding+neural analysis
+    % ------------------------------------------------------------
+    % embedding+neural analysis
 
-% action encoding
+    % action encoding
+    cfg = [];
+    cfg.sdfpath = sdfpath;
+    cfg.figdir = figdir;
+    cfg.datasets = datasets;
+    cfg.nstate = nstate;
+    cfg.fs_frame = fs_frame;
+    cfg.uarea = uarea;
+    cfg.get_encoding = 1;
+        cfg.testtype = 'kw';
+        cfg.nrand = 20;
+        cfg.nboot = 1;
+        cfg.eng_lim = [3, ceil(1*cfg.fs_frame)];
+        cfg.ilag = 1;
+        cfg.theseCuts = [2:8 10:2:20 23:3:31, nstate];
+
+    out_encode = ana_action_encoding(cfg,SDF,res_mod,C,iarea,idat);
+
+    % predict encoding from elec position
+    cfg = [];
+    cfg.monk = monks{im};
+    cfg.figdir = figdir;
+    cfg.model_grid = 0;
+    cfg.varname = 'kwF';
+    cfg.uarea = uarea;
+
+    Var = out_encode.A_act(:,:,1);
+    out_depth_encode = ana_depth_corr(cfg,Var,SDF,iarea);
+
+    % switch sdf
+    cfg = [];
+    cfg.sdfpath = sdfpath;
+    cfg.figdir = figdir;
+    cfg.datasets = datasets;
+    cfg.fs_frame = fs_frame;
+    cfg.uarea = uarea;
+
+    cfg.only_nonengage = 0;
+    cfg.seg_lim = [-1 1];
+    cfg.seg_min = 0.2;
+    cfg.eng_smooth = 1;
+
+    cfg.avgtype = 'median';
+    cfg.normtype = 'presegnorm';
+    cfg.weighted_mean = 0;
+
+    out_switch = ana_switch_sdf(cfg,SDF,C,frame,iarea,idat);
+
+    % switch sdf + controls 
+    cfg.only_nonengage = 1;
+    cfg.weighted_mean = 1;
+    out_switch2 = ana_switch_sdf(cfg,SDF,C,frame,iarea,idat);
+
+    % predict switching signal from elec location
+    cfg = [];
+    cfg.monk = monks{im};
+    cfg.figdir = figdir;
+    cfg.model_grid = 0;
+    cfg.varname = 'dSwitch';
+    cfg.uarea = uarea;
+
+    Var = out_switch.dSeg;
+    out_depth_switch = ana_depth_corr(cfg,Var,SDF,iarea);
+
+    % store for later
+    DAT_all{im,1} = out_switch;
+end
+
+% plot segment, collapsed for yoda and wood
+figdir2 = [anadirs{1} '/Figures_bothMonk'];
+if ~exist(figdir2); mkdir(figdir2); end
+
 cfg = [];
-cfg.sdfpath = sdfpath;
-cfg.figdir = figdir;
-cfg.datasets = datasets;
-cfg.nstate = nstate;
+cfg.figdir = figdir2;
 cfg.fs_frame = fs_frame;
 cfg.uarea = uarea;
-cfg.get_encoding = 1;
-    cfg.testtype = 'kw';
-    cfg.nrand = 20;
-    cfg.nboot = 1;
-    cfg.eng_lim = [3, ceil(1*cfg.fs_frame)];
-    cfg.ilag = 1;
-    cfg.theseCuts = [2:8 10:2:20 23:3:31, nstate];
-
-out_encode = ana_action_encoding(cfg,SDF,res_mod,C,iarea,idat);
-
-% switch sdf
-cfg = [];
-cfg.sdfpath = sdfpath;
-cfg.figdir = figdir;
-cfg.datasets = datasets;
-cfg.fs_frame = fs_frame;
-cfg.uarea = uarea;
-
-cfg.only_nonengage = 0;
-cfg.seg_lim = [-1 1];
-cfg.seg_min = 0.2;
-cfg.eng_smooth = 1;
 
 cfg.avgtype = 'median';
 cfg.normtype = 'presegnorm';
 cfg.weighted_mean = 0;
 
-out_switch = ana_switch_sdf(cfg,SDF,C,frame,iarea,idat);
-
-% switch sdf + controls 
-cfg.only_nonengage = 1;
-cfg.weighted_mean = 1;
-out_switch2 = ana_switch_sdf(cfg,SDF,C,frame,iarea,idat);
-  
-    
+res_tmp = [DAT_all{1,1}.RES_seg; DAT_all{2,1}.RES_seg];
+tmp = ana_switch_sdf(cfg,res_tmp);
