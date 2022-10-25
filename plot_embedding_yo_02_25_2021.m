@@ -247,147 +247,16 @@ end
 
 %% save movie of this whole segment?
 
-selx = ismember(data_proc.frame,f2);
-selx2 = true(size(C));
-
-%cstr = {'orient','jump down','sit1','jump up','walk','sit2','sit3','sit4'};
-cstr = cellfun(@num2str,num2cell(1:max(C)),'un',0);
-Fr = data_proc.frame(selx);
-DS = data_proc.data(selx,:);
-C2 = cstr(C(selx2));
-%C2 = {};
-play_movie_pose(vidnames,DS,labels,Fr,C2)
-
-
-%{
-
-% ////////////////////////////////////////////////////////////////////////////////////
-% inter-subject distance matrix for some clusters
-
-% ////////////////////////////////////////////////////////////////////////////////////
-% play movie of testing lims
-
-if 0
-    f3 = f2(f2>=testLim(1) & f2<=testLim(2));
-    selx = ismember(data_proc.frame,f3);
-    selx2 = ismember(f2,f3);
-else
-    selx = ismember(data_proc.frame,f2);
-    selx2 = true(size(C));
-end
-
-%cstr = {'orient','jump down','sit1','jump up','walk','sit2','sit3','sit4'};
-cstr = cellfun(@num2str,num2cell(1:max(C)),'un',0);
-Fr = data_proc.frame(selx);
-DS = data_proc.data(selx,:);
-C2 = cstr(C(selx2));
-%C2 = {};
-play_movie_pose(vidnames,DS,labels,Fr,C2)
+% selx = ismember(data_proc.frame,f2);
+% selx2 = true(size(C));
+% 
+% %cstr = {'orient','jump down','sit1','jump up','walk','sit2','sit3','sit4'};
+% cstr = cellfun(@num2str,num2cell(1:max(C)),'un',0);
+% Fr = data_proc.frame(selx);
+% DS = data_proc.data(selx,:);
+% C2 = cstr(C(selx2));
+% %C2 = {};
+% play_movie_pose(vidnames,DS,labels,Fr,C2)
 
 
-% ////////////////////////////////////////////////////////////////////////////////////
-% play movie of specific testing segment
-
-ip = 1;
-limp = plottingLims(:,ip) + [-0 0]';
-sel = f2 >= limp(1) & f2 <= limp(2);
-selx = ismember(data_proc.frame, f2(sel));
-
-Fr = data_proc.frame(selx);
-DS = data_proc.data(selx,:);
-cstr = cellfun(@num2str,num2cell(1:max(C)),'un',0);
-C2 = cstr(C(sel));
-play_movie_pose(vidnames,DS,labels,Fr,C2,0.2)
-
-
-% ////////////////////////////////////////////////////////////////////////////////////
-% plot clips of each behaviour
-ic = 6;
-dThresh = 3;
-
-sel = C==ic;
-[st,fn] = find_borders(C==ic);
-d = fn-st;
-tooShort = d<dThresh;
-st(tooShort) = [];
-fn(tooShort) = [];
-tmp = false(size(C));
-for is=1:numel(st); tmp(st(is):fn(is)) = 1; end
-selx = ismember(data_proc.frame,f2(tmp));
-selx2 = ismember(f2,data_proc.frame(selx));
-
-Fr = data_proc.frame(selx);
-DS = data_proc.data(selx,:);
-play_movie_pose(vidnames,DS,labels,Fr,{})
-
-
-% ////////////////////////////////////////////////////////////////////////////////////
-% compare mean features of diff lims
-
-ip = [1 5 7];
-
-figure; h=[];
-set_bigfig(gcf,[0.3 0.2])
-for ii=1:numel(ip)
-    sel = f2 >= plottingLims(1,ip(ii)) & f2 <= plottingLims(2,ip(ii));
-    tmp = x(sel,:);
-    mu = nanmean(tmp);
-    
-    h(ii)=plot(mu,'.-');
-    hold all
-end
-plotcueline('x',ifeat2(2:end-1)-0.5)
-legend(h,plottingStrs(ip),'location','eastoutside');
-set(gca,'xtick',ifeat3,'xticklabel',ufeat); xtickangle(90)
-
-
-
-% ////////////////////////////////////////////////////////////////////////////////////
-% compare mean features of dif segments
-ic = 53;
-dThresh = 3;
-
-sel = C==ic;
-[st,fn] = find_borders(C==ic);
-d = fn-st;
-tooShort = d<dThresh;
-st(tooShort) = [];
-fn(tooShort) = [];
-
-
-tmp=[];
-itmp = 0;
-for ii=1:numel(st)
-    a = x(st(ii):fn(ii),:);
-    tmp = cat(1,tmp,a);
-    itmp = [itmp, itmp(end)+size(a,1)]; 
-end
-itmp(1)=[];
-
-d = pdist(tmp,umap_train.metric);
-d2 = squareform(d);
-
-% plot
-figure
-nr = 1; nc = 2;
-set_bigfig(gcf,[0.35 0.3])
-
-subplot(nr,nc,1)
-imagesc(tmp)
-axis square; 
-colorbar; 
-set(gca,'xtick',ifeat3,'xticklabel',ufeat); 
-pcl('x',ifeat2(2:end-1)-0.5)
-pcl('y',itmp)
-xtickangle(90)
-set(gca,'clim',[-1 1]*5)
-
-subplot(nr,nc,2)
-imagesc(d2)
-pcl('x',itmp)
-pcl('y',itmp)
-axis square
-colorbar
-
-%}
 
