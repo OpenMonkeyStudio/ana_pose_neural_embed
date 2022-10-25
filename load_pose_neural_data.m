@@ -33,6 +33,15 @@ stateMap = [1:max(C), 1:max(C)];
 
 nstate = max(C);
 
+%% try loading modularity, if it exists
+mpath = [anadir '/modularity_test'];
+sname = [mpath '/modularity_train.mat'];
+
+if exist(sname)
+    fprintf('loading modularity data... \n')
+    res_mod = load(sname);
+end
+    
 %% load neural data
 sdfInfo = load([anadir '/sdfInfo.mat']);
 evals(sdfInfo)

@@ -3,8 +3,7 @@ function out = get_graph_cluster(C,idat,anadir)
 
 %settings
 nrand = 10;
-lags = [1:1:49, 50:5:100, 110:10:200, 300:100:1000];
-
+trans_lags = [1:1:49, 50:5:100, 110:10:200, 300:100:1000];
 
 % paths
 [parentdir,jsondir,pyenvpath,rpath,binpath,codepath,ephyspath] = set_pose_paths(0);
@@ -22,6 +21,10 @@ istate = find(diff(C)~=0);
 C_state = C(istate);
 
 idat_state = idat(istate);
+
+% save info
+sname = [mpath '/modInfo.mat'];
+save(sname,'-struct','trans_lags','datasets','nrand')
 
 fprintf('graph clustering:\n \t %s\n',anadir)
 tic
@@ -48,15 +51,15 @@ save(sname,'ignoredStates')
 %% ------------------------------------------------------------
 % observed
 fprintf('getting all transitions')
-nsmp = numel(lags)*max(idat);
+nsmp = numel(trans_lags)*max(idat);
 PO = cell(1,nsmp);
 ii = 0;
 for id=1:max(idat)
-    for ilag = 1:numel(lags)
+    for ilag = 1:numel(trans_lags)
         dotdotdot(ii,0.1,nsmp)
         sel = idat(istate)==id;
         c = C_state(sel);
-        thisLag = lags(ilag);
+        thisLag = trans_lags(ilag);
 
         po = cond_trans_prob(c,thisLag,nstate,1);
 
@@ -87,13 +90,13 @@ opts.pyenvpath = pyenvpath;
 
 out_obs = sendToPython(dat,opts);
 
-sz = [numel(lags) max(idat)];
+sz = [numel(trans_lags) max(idat)];
 out_obs = reformat_output(out_obs,sz,ignoredStates);
 
 %% ------------------------------------------------------------
 % random
 fprintf('getting all transitions')
-nsmp = numel(lags)*max(idat)*nrand;
+nsmp = numel(trans_lags)*max(idat)*nrand;
 PO = cell(1,nsmp);
 ii = 0;
 
@@ -103,10 +106,10 @@ for ir=1:nrand
         c = C_state(sel);
         c = c(randperm(numel(c)));
 
-        for ilag = 1:numel(lags)
+        for ilag = 1:numel(trans_lags)
             dotdotdot(ii,0.1,nsmp)
 
-            thisLag = lags(ilag);
+            thisLag = trans_lags(ilag);
 
             po = cond_trans_prob(c,thisLag,nstate,1);
 
@@ -138,7 +141,7 @@ opts.pyenvpath = pyenvpath;
 
 out_rand = sendToPython(dat,opts);
 
-sz = [numel(lags) max(idat) nrand];
+sz = [numel(trans_lags) max(idat) nrand];
 out_rand = reformat_output(out_rand,sz,ignoredStates);
 
 %% finalize and save
@@ -146,12 +149,12 @@ out = [];
 out.obs = out_obs;
 out.rand = out_rand;
 out.ignoredStates = ignoredStates;
-out.trans_lags = lags;
+out.trans_lags = trans_lags;
 out.Cutoffs = 2:nstate-1;
 
 fprintf('\t saving: %s\n',sname)
 sname = [mpath '/modularity_train.mat'];
-save(sname,'-struct','out')
+save(sname,'-v7.3','-struct','out')
 
 toc
 
