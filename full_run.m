@@ -14,8 +14,8 @@ monks = {'yo','wo'};
 runPosePreproc = 0;
 runRegressors = 0;
 runSdfMatching = 0;
-runEmbeddingTrain = 0;
-runEmbeddingTest = 0;
+runEmbedding_firstMonk = 0;
+runEmbedding_secondMonk = 0;
 
 runGraphCluster = 0;
 
@@ -61,7 +61,7 @@ end
 % ---------------------------------------------
 % yoda: train and re-embed
 % ---------------------------------------------
-if runEmbeddingTrain
+if runEmbedding_firstMonk
     ecfg = [];
     ecfg.anadir = anadirs{1};
     ecfg.monk = 'yo';
@@ -86,7 +86,7 @@ end
 % woodstock
 % ---------------------------------------------
 
-if runEmbeddingTest
+if runEmbedding_secondMonk
     % copy params from yoda
     fprintf('copying training info from %s to %s... \n',monks{1},monks{2})
     
@@ -127,7 +127,7 @@ end
 
 %% graph clusterin
 if runGraphCluster
-    for im=1%:numel(monks)
+    for im=1:numel(monks)
         anadir = anadirs{im};
         load_pose_neural_data
         tmp = get_graph_cluster(C,idat,anadir);
@@ -136,25 +136,33 @@ end
 
 
 %% now analysis
+
+
 DAT_all = {};
-
 for im=1:numel(monks)
-    anadir = anadirs{im};
-
     % load
+    anadir = anadirs{im};
     load_pose_neural_data
 
     % summaries
 
     % ------------------------------------------------------------
     % embedding analysis
-    ana_mod_hierarchy
+    % Figure  2B,C are made as part of embedding (under ~/Figures/embedding.pdf)
+    
+    if im==1 %Figure 2D-F
+        plot_embedding_yo_02_25_2021(anadir)
+    end
+
+    % ------------------------------------------------------------
+    % behavioural analysis
+    ana_mod_hierarchy %(Figure 3)
 
 
     % ------------------------------------------------------------
     % embedding+neural analysis
 
-    % action encoding
+    % action encoding (Figure 4C,D)
     cfg = [];
     cfg.sdfpath = sdfpath;
     cfg.figdir = figdir;
@@ -172,7 +180,7 @@ for im=1:numel(monks)
 
     out_encode = ana_action_encoding(cfg,SDF,res_mod,C,iarea,idat);
 
-    % predict encoding from elec position
+    % predict encoding from elec position (Figure 5)
     cfg = [];
     cfg.monk = monks{im};
     cfg.figdir = figdir;
@@ -183,7 +191,7 @@ for im=1:numel(monks)
     Var = out_encode.A_act(:,:,1);
     out_depth_encode = ana_depth_corr(cfg,Var,SDF,iarea);
 
-    % switch sdf
+    % switch sdf (Figure 6B)
     cfg = [];
     cfg.sdfpath = sdfpath;
     cfg.figdir = figdir;
@@ -202,7 +210,7 @@ for im=1:numel(monks)
 
     out_switch = ana_switch_sdf(cfg,SDF,C,frame,iarea,idat);
 
-    % switch sdf + controls 
+    % switch sdf + controls (Figure 6C)
     cfg.only_nonengage = 1;
     cfg.weighted_mean = 1;
     out_switch2 = ana_switch_sdf(cfg,SDF,C,frame,iarea,idat);
@@ -222,7 +230,7 @@ for im=1:numel(monks)
     DAT_all{im,1} = out_switch;
 end
 
-% plot segment, collapsed for yoda and wood
+% plot segment, collapsed for yoda and wood (Figure 6A)
 figdir2 = [anadirs{1} '/Figures_bothMonk'];
 if ~exist(figdir2); mkdir(figdir2); end
 
