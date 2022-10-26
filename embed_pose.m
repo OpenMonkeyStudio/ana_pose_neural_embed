@@ -295,7 +295,7 @@ if ecfg.embedding_test
         dat.useGPU = 1; % 1=single core, 2=all cores
 
         opts = [];
-        opts.func = [codepath '/python/call_knnsearch.py'];
+        opts.func = [codepath '/utils/python/call_knnsearch.py'];
         opts.verbose = 0;
         opts.clean_files = 1;
         opts.pyenvpath = pyenvpath;

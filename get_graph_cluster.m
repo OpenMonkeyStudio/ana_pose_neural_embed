@@ -85,7 +85,7 @@ opts = [];
 opts.verbose = 1;
 opts.clean_files = 0;
 opts.tmpname = [mpath '/po_obs_hier'];
-opts.func = [codepath '/python/call_transition_cluster.py'];
+opts.func = [codepath '/utils/python/call_transition_cluster.py'];
 opts.pyenvpath = pyenvpath;
 
 out_obs = sendToPython(dat,opts);

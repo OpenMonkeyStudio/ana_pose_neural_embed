@@ -7,6 +7,7 @@ cfg = checkfield(cfg,'varname','needit');
 cfg = checkfield(cfg,'monk','needit');
 
 cfg = checkfield(cfg,'model_binned',0);
+cfg = checkfield(cfg,'nbin',10);
 cfg = checkfield(cfg,'sort_var',0);
 
 % extract
@@ -72,7 +73,7 @@ end
 
 %% plot 3D means
 pos_lab = {'ant-post','lat-med','depth'};
-nbin = ones(1,3)*10;
+nbin = ones(1,3)*cfg.nbin;
 
 xedge=linspace(min(xc2),max(xc2)*1.01,nbin(1)+1);
 yedge=linspace(min(yc2),max(yc2)*1.01,nbin(1)+1);
