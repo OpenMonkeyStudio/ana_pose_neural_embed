@@ -156,11 +156,26 @@ for im=1:numel(monks)
 
     % ------------------------------------------------------------
     % behavioural analysis
-    ana_mod_hierarchy %(Figure 3)
+    cfg = [];
+    cfg.anadir = anadir;
+    cfg.plot_modularity_mean = 1;
+    cfg.plot_modularity_hist = 1;
+    cfg.plot_hierarchy_hist = 1;
+    if im==1
+        cfg.example_modularity_id = 8; % yo_2021-02-25_01
+        cfg.example_hierarchy_id = 8; % yo_2021-02-25_01
+    else
+        cfg.example_modularity_id = 3; % wo_2021-12-08_01
+        cfg.example_hierarchy_id = 3; % wo_2021-12-08_01
+    end
+
+    ana_mod_hierarchy(cfg,res_mod) %(Figure 3)
 
 
     % ------------------------------------------------------------
     % embedding+neural analysis
+
+    % example action encoding (Figure 4A,B)
 
     % action encoding (Figure 4C,D)
     cfg = [];

@@ -91,7 +91,11 @@ opts.pyenvpath = pyenvpath;
 out_obs = sendToPython(dat,opts);
 
 sz = [numel(trans_lags) max(idat)];
-out_obs = reformat_output(out_obs,sz,ignoredStates);
+out_obs = reformat_graph_cluster(out_obs,sz,ignoredStates);
+
+% add transition matrices, for later plotting
+po2 = reshape(PO,sz);
+out_obs.po = po2;
 
 %% ------------------------------------------------------------
 % random
@@ -142,7 +146,7 @@ opts.pyenvpath = pyenvpath;
 out_rand = sendToPython(dat,opts);
 
 sz = [numel(trans_lags) max(idat) nrand];
-out_rand = reformat_output(out_rand,sz,ignoredStates);
+out_rand = reformat_graph_cluster(out_rand,sz,ignoredStates);
 
 %% finalize and save
 out = [];

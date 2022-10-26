@@ -1,4 +1,19 @@
+function ana_mod_hierarchy(cfg,res_mod)
+% ana_mod_hierarchy(cfg,res_mod)
+
+% checks
+cfg = checkfield(cfg,'anadir','needit');
+
+cfg = checkfield(cfg,'example_modularity_id','');
+cfg = checkfield(cfg,'example_hierarchy_id','');
+
+cfg = checkfield(cfg,'plot_modularity_mean',1);
+cfg = checkfield(cfg,'plot_modularity_hist',1);
+cfg = checkfield(cfg,'plot_hierarchy_hist',1);
+
 % paths
+anadir = cfg.anadir;
+
 figdir = [anadir '/Figures'];
 if ~exist(figdir); mkdir(figdir); end
 
@@ -8,11 +23,11 @@ if ~exist(mpath); mkdir(mpath); end
 % flags
 saveFig = 1;
 
-plotMeanModularity = 1;
-plotModuleHist = 1;
-plotDasguptaHist = 1;
+plotExampleModularity = ~isempty(cfg.example_modularity_id);
+plotExampleHierarchy = ~isempty(cfg.example_hierarchy_id);
 
 % prep
+nstate = numel(res_mod.ignoredStates{1,1});
 nrand = size(res_mod.rand.modularity,5);
 lags = res_mod.trans_lags;
 Cutoffs = res_mod.Cutoffs;
@@ -26,8 +41,128 @@ Qr = squeeze(max(Qhr,[],3));
 DGS = res_mod.obs.dasgupta_score;
 DGSr = res_mod.rand.dasgupta_score;
 
+%% example modularity osrting
+if plotExampleModularity
+    ilag = 1;
+    IDs = cfg.example_modularity_id;
+
+    fprintf('plotting transition matrices: ')
+    for id1=1:numel(IDs)
+        id = IDs(id1);
+        fprintf('%g,',id)
+
+        % start figure
+        figure
+        nr = 1; nc = 3;
+        set_bigfig(gcf,[0.35 0.2]);
+
+        % prep transition 
+        m = squeeze(res_mod.obs.modularity(ilag,id,:));
+        [mx,imx] = max(m);
+        lab = squeeze(res_mod.obs.labels_cut(ilag,id,imx,:));
+        good = ~isnan(lab);
+
+        tmp = res_mod.obs.po{ilag,id};
+        po = nan(nstate,nstate);
+        po(good,good) = tmp;
+
+        % plot orig
+        ns = 1;
+        subplot(nr,nc,ns)
+        out1 = plot_sorted_transition(po,lab,0);
+        title('orig')
+
+        % plot modularity
+        ns = 2;
+        subplot(nr,nc,ns)
+        plot(res_mod.Cutoffs,m,'k.-','linewidth',2,'markersize',10)
+        hold all
+        plot(res_mod.Cutoffs(imx),m(imx),'ro','markersize',10)
+        s = sprintf('mod=%.3g, n=%g',mx,Cutoffs(imx));
+        text(res_mod.Cutoffs(imx),m(imx)*1.05,s,'color','r')
+
+        fn = find(isnan(m),1)-1;
+        set(gca,'xlim',[res_mod.Cutoffs(1)-1, res_mod.Cutoffs(fn)+1])
+        axis square
+        xlabel('nclust')
+        ylabel('Modularity')
+
+        % plot sorted
+        ns = 3;
+        subplot(nr,nc,ns)
+        out2 = plot_sorted_transition(po,lab);
+        title('sorted')
+
+        if saveFig
+            figdir2 = [figdir '/modularity_examples'];
+            if ~exist(figdir2); mkdir(figdir2); end
+            sname = sprintf('%s/modularity_id%g',figdir2,id);
+            save2pdf(sname,gcf)
+        end
+    end
+
+        
+end
+
+%% example hierarchy
+if plotExampleHierarchy
+    isVis = 1;
+    ilag = 1;
+
+    IDs = cfg.example_hierarchy_id;
+
+    fprintf('plotting caldograms: ')
+    for id1=1:numel(IDs)
+        id = IDs(id1);
+        fprintf('%g,',id)
+
+        % get data
+        T = res_mod.obs.dendrogram{ilag,id};
+
+        m = squeeze(res_mod.obs.modularity(ilag,id,:));
+        [mx,imx] = max(m);
+        lab = squeeze(res_mod.obs.labels_cut(ilag,id,imx,:));
+        bad = isnan(lab);
+        lab(bad) = [];
+
+        % plot
+        %https://www.mathworks.com/matlabcentral/answers/324932-dendrogram-with-custom-colouring
+        nModule   = max(lab);
+        map = [find(~bad), [1:numel(lab)]', lab];
+
+        out = plot_cladogram(T,[],map,nModule,[],isVis,0);
+        
+        % allow for log spacing, get rid of 0s
+        y = get(out.hden,'ydata');
+        y = cat(1,y{:});
+        mn = min(y(y>0));
+
+        y(y==0) = mn *0.8;
+
+        for ih=1:numel(out.hden)
+            set(out.hden(ih),'ydata',y(ih,:));
+        end
+
+        axden = out.ax_den;
+        set(axden,'yscale','log')
+        set(axden,'TickLength',[0.005 0.002])
+
+        tstr = sprintf('dataset: %g, nModule=%g',id,nModule);
+        title(axden,tstr)
+
+        % save
+        if saveFig
+            figdir2 = [figdir '/cladogram_module'];
+            if ~exist(figdir2); mkdir(figdir2); end
+            sname = sprintf('%s/clado_id%g',figdir2,id);
+            save2pdf(sname,gcf)
+        end
+    end
+    fprintf('\n')
+end
+
 %% plot mean modulatiry
-if plotMeanModularity
+if cfg.plot_modularity_mean
     % get means
     [mu,se] = avganderror(Q,'mean',2);
 
@@ -68,7 +203,7 @@ end
 
 
 %% modularity histogram
-if plotModuleHist
+if cfg.plot_modularity_hist
 
     % start
     figure
@@ -147,8 +282,8 @@ end
 
 
 
-%%
-if plotDasguptaHist
+%% hiearchyq uality scores
+if cfg.plot_hierarchy_hist
     % ------------------------------------
     % histogram for lag==1
     ilag = 1;
