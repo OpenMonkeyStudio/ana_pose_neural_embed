@@ -162,6 +162,7 @@ if runAnalyses
         im = anaMonks(im1);
         
         % load
+        monk = monks{im};
         anadir = anadirs{im};
         figdir = [anadir '/Figures'];
         if ~exist(figdir); mkdir(figdir); end
@@ -169,6 +170,7 @@ if runAnalyses
         load_pose_neural_data
         
         % summaries
+        ana_summary
 
         % ------------------------------------------------------------
         % embedding analysis
