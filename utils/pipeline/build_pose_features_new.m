@@ -39,8 +39,8 @@ end
 %foi = [0.01:0.01:0.1, 0.2:0.1:5, 5.5:0.5:data.fs/2];
 %foi = [0.2:0.1:5, 5.5:0.5:data.fs/2];
 %foi = [0.1:0.1:5, 5.5:0.5:data.fs/2];
-%foi = logspace(log(0.1)./log(10), log(data.fs/2)./log(10),100);
-foi = linspace(0.1,data.fs/2,100);
+foi = logspace(log(0.1)./log(10), log(data.fs/2)./log(10),100);
+%foi = linspace(0.1,data.fs/2,100);
 
 
 wcfg = data.cfg_wvt;

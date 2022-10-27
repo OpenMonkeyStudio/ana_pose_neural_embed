@@ -28,7 +28,7 @@ fprintf('loading...\n')
     Y_train = umap_train.embedding_;
     
     info = load([anadir '/info.mat']);
-    info = rmfield(info,'info');
+    try,info = rmfield(info,'info'); end
     evals(info)
     
     % original data

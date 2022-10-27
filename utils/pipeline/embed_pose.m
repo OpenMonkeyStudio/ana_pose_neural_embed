@@ -12,10 +12,13 @@ ecfg = checkfield(ecfg,'nparallel',15);
 ecfg = checkfield(ecfg,'calc_features',1);
     ecfg = checkfield(ecfg,'normtype',2);
     ecfg = checkfield(ecfg,'base_dataset',2);
+ecfg = checkfield(ecfg,'get_training_data',1);    
+    ecfg = checkfield(ecfg,'trainingdir','');    
 ecfg = checkfield(ecfg,'embedding_train',1);
 ecfg = checkfield(ecfg,'embedding_test',1);
     ecfg = checkfield(ecfg,'knntype','faiss');
     ecfg = checkfield(ecfg,'K',20);
+    ecfg = checkfield(ecfg,'gputype',2);
 ecfg = checkfield(ecfg,'cluster_train',1);
 ecfg = checkfield(ecfg,'cluster_test',1);
 
@@ -101,7 +104,7 @@ if ecfg.calc_features>0 % calculate fresh
         parsave(featInfoPath,tmp)
     else % other subjects
         tmp = load(featInfoPath);
-        featInfo = tmp.procInfo;
+        featInfo = tmp.featInfo;
         firstDataset = [];
 
         % resave info for this dataset
@@ -194,65 +197,73 @@ else
     evals(tmpdat); % put into environment
 end    
 
+%% select training samples
+if ecfg.get_training_data > 0
+    if ecfg.get_training_data==1 % use own data to construct training set
+        fprintf('constructing training set... \n')
+        tic
+        % prep
+        V = nan(size(frame));
+        for id=1:max(idat)
+            sel = idat==id;
+            tmpf = frame(sel);
+            tmpc = com(sel,:);
+
+            dt = diff(tmpf/30);
+            d = diff(tmpc,[],1);
+            v = sqrt(sum(d.^2,2)) ./ dt;
+            v = [0; smooth(v,5)];
+            V(sel) = v;
+        end
+
+        H = com(:,2);
+
+        % init indices
+        idx = 1:6:numel(frame);
+
+        % oversample rare events 
+        if 1
+            tmpfs = 1;
+
+            %samples with high speed
+            selv = V > 2;
+            [st,fn] = find_borders(selv);
+            tooShort = (fn-st)<2; st(tooShort) = []; fn(tooShort) = [];
+            st = max(st - 2,1); fn = min(fn + 2,numel(v));
+            for is=1:numel(st); selv(st(is):tmpfs:fn(is)) = 1; end
+
+            % on the wall
+            selh = H > 3;
+            [st,fn] = find_borders(selh);
+            tooShort = (fn-st)<2; st(tooShort) = []; fn(tooShort) = [];
+            st = max(st - 2,1); fn = min(fn + 2,numel(v));
+            for is=1:numel(st); selh(st(is):tmpfs:fn(is)) = 1; end
+
+            % final 
+            selnew = selv | selh;
+            idx = [idx, find(selnew)'];
+        end
+
+        % final
+        idx_train = unique(idx);
+        X_feat_train = X_feat(idx_train,:);
+
+        % save
+        save(infopath,'-append','idx_train')
+        toc
+    else % load the training set from elsewhere
+        fprintf('loading training set from elsewhere:\n%s\n',ecfg.trainingdir)
+        tmpdir = ecfg.trainingdir;
+        tmpinfo = load([fileparts(tmpdir) '/info.mat']);
+        [X_feat_train,tmpdat] = load_features(tmpdir,'feat',tmpinfo.datasets);
+        X_feat_train = X_feat_train(tmpinfo.idx_train,:);
+    end
+end
+
+% downsample training set
+
 %% run embedding
-if ecfg.embedding_train
-    % ----------------------------------------------------
-    % select training samples
-    fprintf('constructing training set... \n')
-    tic
-    % prep
-    V = nan(size(frame));
-    for id=1:max(idat)
-        sel = idat==id;
-        tmpf = frame(sel);
-        tmpc = com(sel,:);
-
-        dt = diff(tmpf/30);
-        d = diff(tmpc,[],1);
-        v = sqrt(sum(d.^2,2)) ./ dt;
-        v = [0; smooth(v,5)];
-        V(sel) = v;
-    end
-
-    H = com(:,2);
-
-    % init indices
-    idx = 1:6:numel(frame);
-
-    % oversample rare events 
-    if 1
-        tmpfs = 1;
-
-        %samples with high speed
-        selv = V > 2;
-        [st,fn] = find_borders(selv);
-        tooShort = (fn-st)<2; st(tooShort) = []; fn(tooShort) = [];
-        st = max(st - 2,1); fn = min(fn + 2,numel(v));
-        for is=1:numel(st); selv(st(is):tmpfs:fn(is)) = 1; end
-
-        % on the wall
-        selh = H > 3;
-        [st,fn] = find_borders(selh);
-        tooShort = (fn-st)<2; st(tooShort) = []; fn(tooShort) = [];
-        st = max(st - 2,1); fn = min(fn + 2,numel(v));
-        for is=1:numel(st); selh(st(is):tmpfs:fn(is)) = 1; end
-
-        % final 
-        selnew = selv | selh;
-        idx = [idx, find(selnew)'];
-    end
-
-    % final
-    idx_train = unique(idx);
-    X_feat_train = X_feat(idx_train,:);
-    %idat_train = idat(idx_train);
-    %frame_train = frame(idx_train);
-
-    % save
-    save(infopath,'-append','idx_train')
-    toc
-
-    % ----------------------------------------------------
+if ecfg.embedding_train  
     % run emebdding training
     tic
 
@@ -271,9 +282,6 @@ else
 
     tmp = load([anadir '/umap_train.mat']);
     Y_train = tmp.embedding_;
-    
-    X_feat_train = X_feat(idx_train,:);
-
 end
     
 
@@ -292,7 +300,7 @@ if ecfg.embedding_test
         dat.Xq = Xq;
         dat.K = ecfg.K;
         dat.metric = ucfg.metric;
-        dat.useGPU = 1; % 1=single core, 2=all cores
+        dat.useGPU = ecfg.gputype; % 1=single core, 2=all cores
 
         opts = [];
         opts.func = [codepath '/utils/python/call_knnsearch.py'];
@@ -363,8 +371,8 @@ if ecfg.cluster_test
     tic
     % test data
     fprintf('\t reloading: \n')
-    if ~exist('cluster_train')==1; fprint('cluster,'); cluster_train = load([anadir '/cluster_train.mat']); end
-    if ~exist('umap_test')==1; fprint('umap_test,'); umap_test = load([anadir '/umap_test.mat']); end
+    if ~exist('cluster_train')==1; fprintf('cluster,'); cluster_train = load([anadir '/cluster_train.mat']); end
+    if ~exist('umap_test')==1; fprintf('umap_test,'); umap_test = load([anadir '/umap_test.mat']); end
     Y_test = umap_test.embedding_;
 
     % find the state labels

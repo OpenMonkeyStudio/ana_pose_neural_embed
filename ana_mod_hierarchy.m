@@ -179,7 +179,7 @@ if cfg.plot_modularity_mean
     
     % plot
     figure
-    set_bigfig(gcf,[0.25 0.35])
+    set_bigfig(gcf,[0.20 0.20])
 
     h = [];
     htmp = shadedErrorBar(lags,mu,se,{'r.-'});
@@ -300,7 +300,7 @@ if cfg.plot_hierarchy_hist
     qr = nanmean(qr,2);
 
     figure
-    set_bigfig(gcf,[0.3 0.3])
+    set_bigfig(gcf,[0.2 0.2])
 
     ho = histogram(q,'normalization','probability');
     set(ho,'facecolor','k','edgecolor','none')

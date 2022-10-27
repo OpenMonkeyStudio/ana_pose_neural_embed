@@ -24,7 +24,7 @@ idat_state = idat(istate);
 
 % save info
 sname = [mpath '/modInfo.mat'];
-save(sname,'-struct','trans_lags','datasets','nrand')
+save(sname,'trans_lags','nrand')
 
 fprintf('graph clustering:\n \t %s\n',anadir)
 tic
@@ -50,7 +50,7 @@ save(sname,'ignoredStates')
 
 %% ------------------------------------------------------------
 % observed
-fprintf('getting all transitions')
+fprintf('getting all OBSERVED transitions')
 nsmp = numel(trans_lags)*max(idat);
 PO = cell(1,nsmp);
 ii = 0;
@@ -99,7 +99,7 @@ out_obs.po = po2;
 
 %% ------------------------------------------------------------
 % random
-fprintf('getting all transitions')
+fprintf('getting all RANDOM transitions')
 nsmp = numel(trans_lags)*max(idat)*nrand;
 PO = cell(1,nsmp);
 ii = 0;
@@ -140,7 +140,7 @@ opts = [];
 opts.verbose = 1;
 opts.clean_files = 0;
 opts.tmpname = [mpath '/po_rand_hier'];
-opts.func = [codepath '/python/call_transition_cluster.py'];
+opts.func = [codepath '/utils/python/call_transition_cluster.py'];
 opts.pyenvpath = pyenvpath;
 
 out_rand = sendToPython(dat,opts);
