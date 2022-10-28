@@ -13,6 +13,9 @@ fs_frame = 30;
 fs_neural = 1000;
 fs = fs_frame;
 
+fprintf('loading data:\n%s\n',anadir)
+tic
+
 %% load embedding
 fprintf('loading embedding testing data...\n')
 
@@ -24,20 +27,19 @@ load([anadir '/info.mat'],tmp{:})
 % load cluster results
 % - assumes has already been cleaned
 fprintf('\t cluster...\n')
-cluster_test_orig = load([anadir '/cluster_test.mat']);
-try, cluster_train_orig = load([anadir '/cluster_train.mat']);catch; cluster_train_orig=[]; end
+cluster_train = load([anadir '/cluster_train.mat']);
+cluster_test = load([anadir '/cluster_test.mat']);
 
-C = cluster_test_orig.clabels;
-cluster_train = cluster_test_orig;
+C = cluster_test.clabels;
 stateMap = [1:max(C), 1:max(C)];
 
 nstate = max(C);
 
 %% try loading modularity, if it exists
 mpath = [anadir '/modularity_test'];
-sname = [mpath '/modularity_train.mat'];
 
-if exist(sname)
+sname = [mpath '/modularity_train.mat'];
+if exist(sname,'file')
     fprintf('loading modularity data... \n')
     res_mod = load(sname);
 end
@@ -58,3 +60,5 @@ tmp = [iarea, iarea2];
 tmp = unique(tmp,'rows');
 iarea = changem(iarea,tmp(:,2),tmp(:,1));
 uarea = areaOrder;
+
+toc

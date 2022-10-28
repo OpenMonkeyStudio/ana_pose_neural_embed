@@ -71,6 +71,7 @@ if cfg.get_encoding
     fprintf('indiv neuron encoding: ')
     parfor id=1:numel(SDF)
     %for id=1:numel(SDF)
+    try
         fprintf('%g,',id)
         
         sdf = SDF(id);
@@ -165,6 +166,11 @@ if cfg.get_encoding
                 end
             end
         end
+        
+    catch err
+        fprintf('error on %g\n',id)
+        rethrow(err)
+    end
     end
     fprintf('\n')
 

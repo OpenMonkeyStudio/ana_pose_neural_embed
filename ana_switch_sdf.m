@@ -166,7 +166,7 @@ for id=1:numel(RES_seg)
     c = RES_seg(id).C_seg(:,2); % pre OR post state
 
     % time series
-    if strcmp(normtype,'presegnorm') % z-norm by pre of each seg
+    if strcmp(normtype,'preswitch') % z-norm by pre of each seg
         m = nanmedian(pre,3);
         s = mad(pre,1,3);
 

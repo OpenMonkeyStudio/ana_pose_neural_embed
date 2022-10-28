@@ -135,7 +135,8 @@ coef = mdl.Coefficients.Estimate;
 
 %% PLOT
 % plot
-figure
+s = sprintf('depth vs %s corr, model-grid=%g, nbin=%g',varname,modelGridPoints,cfg.nbin);
+figure('name',s)
 nr=4; nc = 4;
 set_bigfig(gcf,[0.3 0.6])
 
@@ -167,8 +168,8 @@ ticks = ticks+mean(diff(ticks))/2;
 tlabel = cellfun(@(x) num2str(x,'%.2g'),num2cell(ke(uk)),'un',0);
 set(hc,'ticks',ticks,'ticklabels',tlabel);
 
-str = sprintf('%s per location, model binned val=%g,\nmodel F=%.3g, p=%.3g\n%s B=%.3g, p=%.3g\n%s B=%.3g, p=%.3g\n%s B=%.3g, p=%.3g\n',...
-                varname,modelGridPoints,F,P,pos_lab{1},coef(2),pcoef(2),pos_lab{2},coef(3),pcoef(3),pos_lab{3},coef(4),pcoef(4));
+str = sprintf('%s per location, model binned val=%g,\nmodel F=%.3g, p=%.3g, R=%.3g\n%s B=%.3g, p=%.3g\n%s B=%.3g, p=%.3g\n%s B=%.3g, p=%.3g\n',...
+                varname,modelGridPoints,F,P,mdl.Rsquared.Ordinary,pos_lab{1},coef(2),pcoef(2),pos_lab{2},coef(3),pcoef(3),pos_lab{3},coef(4),pcoef(4));
 title(str)
 % xlabel('anterior-posterior')
 % ylabel('lateral-medial')
@@ -228,7 +229,7 @@ set(gca,'xlim',[ze(1) ze(end)])
 axis square
 
 % save
-sname = [figdir '/depth_corr_' varname];
+sname = sprintf('%s/depth_corr_%s_modelGrid%g_nbin%g',figdir,varname,modelGridPoints,cfg.nbin);
 save2pdf(sname,gcf)
 
 %% output
