@@ -182,12 +182,13 @@ if runAnalyses
             set_bigfig(gcf,[0.35 0.2])
 
             subplot(nr,nc,1)
-            plot_embedding(cluster_train.outClust,cluster_train.Lbnds,cluster_train.Ld,1,1);
+            hout1 = plot_embedding(cluster_train.outClust,cluster_train.Lbnds,cluster_train.Ld,1,1);
             title([monks{im} ': train'])
             subplot(nr,nc,2)
-            plot_embedding(cluster_test.outClust,cluster_test.Lbnds,cluster_test.Ld,1,1);
+            hout2 = plot_embedding(cluster_test.outClust,cluster_test.Lbnds,cluster_test.Ld,1,1);
             title([monks{im} ': test'])
-
+            setaxesparameter([hout1.hax, hout2.hax],'clim')
+            
             sname = [figdir '/embedding_train_test.pdf'];
             save2pdf(sname,gcf)
 
@@ -221,6 +222,10 @@ if runAnalyses
         % action encoding
         if anaEncoding
             % example action encoding (Figure 4A,B)
+            if im==1
+                name = 'yo_2021-06-08_01_enviro'; % lots of neurons
+                plot_example_encoding(datasets,name,figdir,SDF,C,idat)
+            end
 
             % action encoding (Figure 4C,D)
             cfg = [];
