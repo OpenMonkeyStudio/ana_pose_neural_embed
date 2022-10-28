@@ -98,7 +98,7 @@ if plotEmbedding
 
     figure
     nr = 2; nc = 2;
-    set_bigfig(gcf,[0.35 0.4],[0 0.25]);
+    set_bigfig(gcf,[0.7 0.8],[0 0.25]);
 
     % embedding with points
     subplot(nr,nc,1)

@@ -5,10 +5,34 @@
 - assumes ephys data for each session is in the master folder
 %}
 
+%% add code to path
+%{
+
+% repos
+fprintf('adding repos...\n')
+s = 'C:\Users\HaydenLab\Documents\git\oms_internal';
+addpath(genpath(s))
+s = 'C:\Users\HaydenLab\Documents\git\ana_pose_neural_embed';
+addpath(genpath(s))
+
+% fieldtrip
+fprintf('adding fieldtrip...\n')
+ftpath = 'C:\Users\HaydenLab\Documents\_code\fieldtrip-master';
+rmpath(genpath(ftpath)); % it would have been added
+addpath(ftpath)
+ft_defaults
+global ft_default
+ft_detault.trackcallinfo = 'no';
+ft_detault.showcallinfo = 'no';
+
+% NB: change paths in set_pose_paths
+%}
+
+[parentdir,jsondir,pyenvpath,rpath,binpath,codepath,ephyspath] = set_pose_paths(0);
+
 %% settings
-%datadir = '/mnt/scratch/BV_embed/P_neural_final';
-%datadir = '/mnt/scratch/BV_embed/P_neural_final_test';
-datadir = '/mnt/scratch/BV_embed/P_neural_final_oldEmbed';
+%datadir = '/mnt/scratch/BV_embed/P_neural_final_oldEmbed';
+datadir = 'D:\P_neural_final_oldEmbed';
 
 monks = {'yo','wo'};
 
@@ -37,17 +61,17 @@ for im=1:numel(monks)
     anadirs{im} = s;
     
     f = [s '/Figures'];
-    if ~exist(f); mkdir(f); end
+    if ~exist(f); mkdir(f); end    
 end
 
 %% run pose preprocessing for both monks
 if runPosePreproc
     procAll = 0; % just proc what we need
     
-    logpath = '/mnt/scratch/git/ana_pose_neural_embed/docs/data_log_woodstock_ephys.xlsx';
+    logpath = [ephypath '/data_log_woodstock_ephys.xlsx'];
     res_proc_wo = run_preproc_diffTransform('wo',procAll,logpath);
 
-    logpath = '/mnt/scratch/git/ana_pose_neural_embed/docs/data_log_yoda_ephys.xlsx';
+    logpath = [ephyspath '/data_log_yoda_ephys.xlsx'];
     res_proc_yo = run_preproc_diffTransform('yo',procAll,logpath);
 end
 
@@ -219,7 +243,7 @@ if runAnalyses
             % - note: the training embedding will be the same for both
             figure('name',[monks{im} ' embedding'])
             nr = 1; nc = 2;
-            set_bigfig(gcf,[0.35 0.2])
+            set_bigfig(gcf,[0.7 0.4])
 
             subplot(nr,nc,1)
             hout1 = plot_embedding(cluster_train.outClust,cluster_train.Lbnds,cluster_train.Ld,1,1);
@@ -278,7 +302,7 @@ if runAnalyses
             cfg.nstate = nstate;
             cfg.fs_frame = fs_frame;
             cfg.uarea = uarea;
-            cfg.get_encoding = 1;
+            cfg.get_encoding = 0;
                 cfg.testtype = 'kw';
                 cfg.nrand = 20;
                 cfg.nboot = 1;
@@ -347,6 +371,7 @@ if runAnalyses
 
             % store for later
             SEG_all{im,1} = out_switch;
+            SEG_all{im,2} = out_switch2;
         end
     end
 
@@ -355,6 +380,10 @@ if runAnalyses
     if anaSwitch
         figdir2 = [anadirs{1} '/Figures_bothMonk'];
         if ~exist(figdir2); mkdir(figdir2); end
+
+        % plot
+        iseg = 1;
+        res_tmp = [SEG_all{1,iseg}.RES_seg; SEG_all{2,iseg}.RES_seg];
 
         cfg = [];
         cfg.figdir = figdir2;
@@ -365,7 +394,6 @@ if runAnalyses
         cfg.normtype = 'preswitch';
         cfg.weighted_mean = 0;
 
-        res_tmp = [SEG_all{1,1}.RES_seg; SEG_all{2,1}.RES_seg];
         tmp = ana_switch_sdf(cfg,res_tmp);
     end
     

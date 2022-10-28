@@ -54,7 +54,7 @@ if plotExampleModularity
         % start figure
         figure
         nr = 1; nc = 3;
-        set_bigfig(gcf,[0.35 0.2]);
+        set_bigfig(gcf,[0.7 0.4]);
 
         % prep transition 
         m = squeeze(res_mod.obs.modularity(ilag,id,:));
@@ -179,7 +179,7 @@ if cfg.plot_modularity_mean
     
     % plot
     figure
-    set_bigfig(gcf,[0.20 0.20])
+    set_bigfig(gcf,[0.4 0.4])
 
     h = [];
     htmp = shadedErrorBar(lags,mu,se,{'r.-'});
@@ -208,7 +208,7 @@ if cfg.plot_modularity_hist
     % start
     figure
     nr = 1; nc = 2;
-    set_bigfig(gcf,[0.35 0.25])
+    set_bigfig(gcf,[0.7 0.5])
 
     % ------------------------------------
     % histogram for lag==1
@@ -300,7 +300,7 @@ if cfg.plot_hierarchy_hist
     qr = nanmean(qr,2);
 
     figure
-    set_bigfig(gcf,[0.2 0.2])
+    set_bigfig(gcf,[0.4 0.4])
 
     ho = histogram(q,'normalization','probability');
     set(ho,'facecolor','k','edgecolor','none')

@@ -30,6 +30,7 @@ if ~exist(sdfpath_data); mkdir(sdfpath_data); end
 
 % prep output
 sdfInfo = [];
+[~,sdfInfo.sdfname] = fileparts(sdfpath);
 sdfInfo.sdfpath = sdfpath;
 sdfInfo.sdfpath_data = sdfpath_data;
 sdfInfo.datasets = datasets;
