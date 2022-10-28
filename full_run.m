@@ -5,8 +5,35 @@
 - assumes ephys data for each session is in the master folder
 %}
 
+%% add code to path
+%{
+
+% repos
+fprintf('adding repos...\n')
+omspath = 'C:\Users\HaydenLab\Documents\git\oms_internal';
+addpath(genpath(omspath))
+anapath = 'C:\Users\HaydenLab\Documents\git\ana_pose_neural_embed';
+s2 = rmgenpath(anapath,{'fieldtrip-master'}); % screws with fieldtrip
+addpath(s2)
+
+% fieldtrip
+omspath('adding fieldtrip...\n')
+ftpath = [anapath '\utils\fieldtrip-master'];
+rmpath(genpath(ftpath)); % it would have been added
+addpath(ftpath)
+ft_defaults
+global ft_default
+ft_detault.trackcallinfo = 'no';
+ft_detault.showcallinfo = 'no';
+
+% NB: change paths in set_pose_paths
+%}
+
+[parentdir,jsondir,pyenvpath,rpath,binpath,codepath,ephyspath] = set_pose_paths(0);
+
 %% settings
-datadir = '/mnt/scratch/BV_embed/P_neural_final';
+%datadir = '/mnt/scratch/BV_embed/P_neural_final';
+datadir = 'D:\P_neural_final_oldEmbed';
 
 monks = {'yo','wo'};
 
@@ -31,10 +58,10 @@ end
 if runPosePreproc
     procAll = 0; % just proc what we need
     
-    logpath = '/mnt/scratch/git/ana_pose_neural_embed/docs/data_log_woodstock_ephys.xlsx';
+    logpath = [ephypath '/data_log_woodstock_ephys.xlsx'];
     res_proc_wo = run_preproc_diffTransform('wo',procAll,logpath);
 
-    logpath = '/mnt/scratch/git/ana_pose_neural_embed/docs/data_log_yoda_ephys.xlsx';
+    logpath = [ephyspath '/data_log_yoda_ephys.xlsx'];
     res_proc_yo = run_preproc_diffTransform('yo',procAll,logpath);
 end
 

@@ -3,12 +3,6 @@ function [parentdir,jsondir,pyenvpath,rpath,binpath,codepath,ephyspath] = set_po
 %
 % adjust paths here to fit your local machine
 
-% add toolboxes that cant live on github
-if addCode
-%     s = '/Users/ben/Downloads/mat_bigcage';
-    s = '/Users/david/Desktop/mat_bigcage';
-    addpath(genpath(s))
-end
 
 % figure out the computer
 c = computer;
@@ -20,6 +14,17 @@ else
     u = getenv('USER');
 end
 
+
+parentdir = 'D:\';
+jsondir = 'xxx';
+pyenvpath='xxx';
+rpath = 'Rscript';
+binpath = '/usr/bin';
+codepath = 'C:\Users\HaydenLab\Documents\git\ana_pose_neural_embed';
+ephyspath = [codepath '/ephys/docs'];
+
+
+%{
 % paths
 if strcmp(c,'MACI64') && strcmpi(u,'ben') %BV
     parentdir = '/Volumes/SSD_Q';
@@ -56,4 +61,4 @@ elseif strcmp(c,'GLNXA64') && strcmp(h,'loki') %loki
 else
     error('cant figure out the comp!')
 end
-
+%}
