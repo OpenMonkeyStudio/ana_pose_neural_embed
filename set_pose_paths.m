@@ -21,7 +21,7 @@ pyenvpath='xxx';
 rpath = 'Rscript';
 binpath = '/usr/bin';
 codepath = 'C:\Users\HaydenLab\Documents\git\ana_pose_neural_embed';
-ephyspath = [codepath '/ephys/docs'];
+ephyspath = [codepath '/docs'];
 
 
 %{

@@ -203,7 +203,7 @@ if runAnalyses
             % - note: the training embedding will be the same for both
             figure('name',[monks{im} ' embedding'])
             nr = 1; nc = 2;
-            set_bigfig(gcf,[0.35 0.2])
+            set_bigfig(gcf,[0.7 0.4])
 
             subplot(nr,nc,1)
             hout1 = plot_embedding(cluster_train.outClust,cluster_train.Lbnds,cluster_train.Ld,1,1);

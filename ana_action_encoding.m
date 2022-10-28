@@ -238,7 +238,7 @@ A = A(:,1:end-1,:);
 
 figure;
 nr = 2; nc = 4;
-set_bigfig(gcf,[0.4 0.35],[0.4 0.27])
+set_bigfig(gcf,[0.6 0.7],[0.4 0.27])
 set(gcf,'units','normalized')
 pos = get(gcf,'position');
 

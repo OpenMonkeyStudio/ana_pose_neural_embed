@@ -202,7 +202,7 @@ MU(bad) = nan;
 % start figure
 figure;
 nr = 1; nc = 2;
-set_bigfig(gcf,[0.3 0.2])
+set_bigfig(gcf,[0.6 0.4])
 cols = get_safe_colors(0,[1:5 7]);
     
     

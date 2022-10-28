@@ -138,7 +138,7 @@ coef = mdl.Coefficients.Estimate;
 s = sprintf('depth vs %s corr, model-grid=%g, nbin=%g',varname,modelGridPoints,cfg.nbin);
 figure('name',s)
 nr=4; nc = 4;
-set_bigfig(gcf,[0.3 0.6])
+set_bigfig(gcf,[0.3 0.9])
 
 % --------------------------------------------------------
 % bubbleplot
@@ -156,10 +156,11 @@ set(gca,'zdir','reverse')
 view(-40,30)
 
 colormap(colmap)
-hc=colorbar;
-pos = get(hc,'position');
-pos2 =[0.93,pos(2) + 0.2,pos(3),pos(4)/2];
-set(hc,'position',pos2);
+hc=colorbar('location','southoutside');
+%pos = get(hc,'position');
+%pos2 =[0.93,pos(2) + 0.2,pos(3),pos(4)/2];
+%pos2 =[pos(1),pos(2) + 0.2,pos(3),pos(4)/2];
+%set(hc,'position',pos2);
 
 uk = unique(ik);
 ticks = get(hc,'ticks');

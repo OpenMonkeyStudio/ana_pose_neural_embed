@@ -13,12 +13,10 @@ fs_frame = 30;
 fs_neural = 1000;
 fs = fs_frame;
 
-sname = [anadir '/sdfInfo'];
-if exist(sname)
-    tmp = load();
-    sdfpath = [anadir '/' tmp.sdfname];
-    sdfpath_data = [anadir '/' tmp.sdfname '/sdf'];
-end
+sname = [anadir '/sdfInfo.mat'];
+tmp = load(sname);
+sdfpath = [anadir '/' tmp.sdfname];
+sdfpath_data = [anadir '/' tmp.sdfname '/sdf'];
 
 fprintf('loading data:\n%s\n',anadir)
 tic

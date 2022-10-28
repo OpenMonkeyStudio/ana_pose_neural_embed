@@ -108,7 +108,7 @@ if plotExampleRate
     % plot
     figure
     nr = 1; nc = 2;
-    set_bigfig(gcf,[0.3 0.2],[0 0.3])
+    set_bigfig(gcf,[0.6 0.4],[0 0.3])
     cols = get_safe_colors(0,[1:5 7]);
 
     % plot mean rate per example actions
