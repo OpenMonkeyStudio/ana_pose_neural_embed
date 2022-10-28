@@ -172,6 +172,46 @@ if runAnalyses
         % summaries
         ana_summary
 
+        % make videos of all actions
+        % never quite got it working
+        %{
+        if makeExampleVideos && im==1
+            dstpath = [anadir '/Vid_clusters'];
+
+            % make videos
+            ST = tic;
+            for id=1:numel(datasets)
+                try
+                    tic
+                    sel = idat==id;
+                    tmpc = cluster_test.clabels(sel);
+                    f = frame(sel);
+
+                    % vid anems
+                    name = datasets(id).name;
+                    vidnames = {'vid_18261112_full.mp4','vid_18261030_full.mp4'};
+                    vidnames = cellfun(@(x) [fileparts(anadir) '/' name '/vids/' x],vidnames,'un',0);
+
+                    % call
+                    vcfg = [];
+                    vcfg.dThresh = 30;
+                    vcfg.nrand = 10;
+                    vcfg.dstpath = dstpath;
+                    vcfg.suffix = sprintf('id%g',id);
+                    vcfg.vidnames = vidnames;
+                    cluster_example_videos(tmpc,f,vcfg)
+                    toc
+                    fprintf('\n')
+                catch
+                    error('error on %g',id)
+                end
+            end
+
+            fprintf('TOTAL VIDEO TIME: %g',toc(ST))
+
+        end
+        %}
+        
         % ------------------------------------------------------------
         % embedding analysis
         if anaEmbedding
@@ -225,6 +265,9 @@ if runAnalyses
             if im==1
                 name = 'yo_2021-06-08_01_enviro'; % lots of neurons
                 plot_example_encoding(datasets,name,figdir,SDF,C,idat)
+                
+                % makes and save example video
+                % viz_example
             end
 
             % action encoding (Figure 4C,D)

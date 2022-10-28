@@ -65,7 +65,7 @@ if thisTest==1 %1.5min, walk, jump up/dwn, sit, feeder
     %testLim = [13050 19000];
     %jumpLim = [13151 13215; 14440 14470];
     plottingLims = [13179,13205;13220,13535;13535,14335;14390,14430;14435,14464;14469,14915;14965,15465]';
-    plottingStrs = {'jump down','walk','feeder','walk','jump up','sit1','sit2'};
+    plottingStrs = {'jump down','walk','feeder','walk','jump up','sit1'};
 
     testLim = [min(plottingLims(:)) max(plottingLims(:))];
 elseif thisTest==3 %confusing limbing with standing upright/sitting plsayed open
