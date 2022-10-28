@@ -13,6 +13,13 @@ fs_frame = 30;
 fs_neural = 1000;
 fs = fs_frame;
 
+sname = [anadir '/sdfInfo'];
+if exist(sname)
+    tmp = load();
+    sdfpath = [anadir '/' tmp.sdfname];
+    sdfpath_data = [anadir '/' tmp.sdfname '/sdf'];
+end
+
 fprintf('loading data:\n%s\n',anadir)
 tic
 
@@ -45,8 +52,6 @@ if exist(sname,'file')
 end
     
 %% load neural data
-sdfInfo = load([anadir '/sdfInfo.mat']);
-evals(sdfInfo)
 [SDF,sdfnames] = load_back_sdf(sdfpath_data,useSDF_resid,{},{},loadAreas,1,forceAreaUpdate);
 
 % collapse areas for analysis

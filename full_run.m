@@ -16,7 +16,7 @@ s = 'C:\Users\HaydenLab\Documents\git\ana_pose_neural_embed';
 addpath(genpath(s))
 
 % fieldtrip
-omspath('adding fieldtrip...\n')
+fprintf('adding fieldtrip...\n')
 ftpath = 'C:\Users\HaydenLab\Documents\_code\fieldtrip-master';
 rmpath(genpath(ftpath)); % it would have been added
 addpath(ftpath)
@@ -61,7 +61,7 @@ for im=1:numel(monks)
     anadirs{im} = s;
     
     f = [s '/Figures'];
-    if ~exist(f); mkdir(f); end
+    if ~exist(f); mkdir(f); end    
 end
 
 %% run pose preprocessing for both monks
@@ -259,7 +259,7 @@ if runAnalyses
             cfg.nstate = nstate;
             cfg.fs_frame = fs_frame;
             cfg.uarea = uarea;
-            cfg.get_encoding = 1;
+            cfg.get_encoding = 0;
                 cfg.testtype = 'kw';
                 cfg.nrand = 20;
                 cfg.nboot = 1;
@@ -328,6 +328,7 @@ if runAnalyses
 
             % store for later
             SEG_all{im,1} = out_switch;
+            SEG_all{im,2} = out_switch2;
         end
     end
 
@@ -336,6 +337,10 @@ if runAnalyses
     if anaSwitch
         figdir2 = [anadirs{1} '/Figures_bothMonk'];
         if ~exist(figdir2); mkdir(figdir2); end
+
+        % plot
+        iseg = 1;
+        res_tmp = [SEG_all{1,iseg}.RES_seg; SEG_all{2,iseg}.RES_seg];
 
         cfg = [];
         cfg.figdir = figdir2;
@@ -346,7 +351,6 @@ if runAnalyses
         cfg.normtype = 'preswitch';
         cfg.weighted_mean = 0;
 
-        res_tmp = [SEG_all{1,1}.RES_seg; SEG_all{2,1}.RES_seg];
         tmp = ana_switch_sdf(cfg,res_tmp);
     end
     

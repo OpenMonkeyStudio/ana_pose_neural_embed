@@ -47,7 +47,9 @@ spkparentpath = fileparts(fileparts(sdfpath));
 sname = [sdfpath '/' testtype '_actions.mat'];
 if cfg.get_encoding
     ncuts = numel(theseCuts);
-
+    nrand2 = nrand+1;
+    ndat = numel(SDF);
+    
     % open parpool
     if cfg.nparallel > 1 && isempty(gcp('nocreate'))
         myPool = parpool('local',cfg.nparallel);
@@ -62,15 +64,13 @@ if cfg.get_encoding
         C_noBroadcast{id} = C(idat==id);
     end
 
-    F = nan(numel(SDF),numel(theseCuts));
-    Fr = nan(numel(SDF),numel(theseCuts),nrand);
-    P = nan(numel(SDF),numel(theseCuts));
-
-    nrand2 = nrand+1;
+    F = nan(ndat,ncuts,nboot);
+    Fr = nan(ndat,ncuts,nboot,nrand);
+    P = nan(ndat,ncuts,nboot);
       
     fprintf('indiv neuron encoding: ')
-    parfor id=1:numel(SDF)
-    %for id=1:numel(SDF)
+    parfor id=1:ndat
+    %for id=1:ndat
     try
         fprintf('%g,',id)
         
@@ -85,8 +85,12 @@ if cfg.get_encoding
         m = max(tmp,[],2);
         maxCuts = max(m);
 
-        dat_cuts = cell(numel(theseCuts),3);
-        for ic1=1:numel(theseCuts)
+        ftmp = [];
+        frtmp = [];
+        ptmp = [];
+        
+        dat_cuts = cell(ncuts,3);
+        for ic1=1:ncuts
             cut = theseCuts(ic1);
             if cut==nstate
                 c = C_noBroadcast{id2};
@@ -115,8 +119,8 @@ if cfg.get_encoding
             dat_cuts{ic1,3} = c;
 
         end
-        ndat = cellfun(@numel,dat_cuts(:,2));
-        mndat = min(ndat);
+        nsmp = cellfun(@numel,dat_cuts(:,2));
+        mnsmp = min(nsmp);
 
         % loopp over all cuts
         for ic1=1:ncuts
@@ -127,7 +131,7 @@ if cfg.get_encoding
                 if isempty(Xt); continue; end
 
                 if nboot > 1
-                    bidx = randperm(numel(Xt),mndat);
+                    bidx = randperm(numel(Xt),mnsmp);
                     bidx = sort(bidx);
                     Xt = Xt(bidx);
                     y = y(bidx);
@@ -153,20 +157,28 @@ if cfg.get_encoding
                         f = T{2,5};
                         p = T{2,6};
                     else
+                        f=nan;
+                        p=nan;
                         error('unrecognized test')
                     end
 
                     % store
                     if ir==nrand2
-                        F(id,ic1,ib) = f;
-                        P(id,ic1,ib) = p;
+                        ftmp(ic1,ib) = f;
+                        ptmp(ic1,ib) = p;
+                        %F(id,ic1,ib) = f;
+                        %P(id,ic1,ib) = p;
                     else
-                        Fr(id,ic1,ib,ir) = f;
+                        frtmp(ic1,ib,ir) = f;
+                        %Fr(id,ic1,ib,ir) = f;
                     end
                 end
             end
         end
         
+        F(id,:,:) = ftmp;
+        Fr(id,:,:,:) = ftmp;
+        P(id,:,:) = ptmp;
     catch err
         fprintf('error on %g\n',id)
         rethrow(err)
@@ -266,7 +278,13 @@ for ip=1:2
     title(s)
     xlabel('nclust')
     ylabel([avgtype ' F'])
-    legend(hp,uarea,'location','northwest')
+    if ip==1
+        hl = legend(hp,uarea,'location','northwest');
+        pos = get(hl,'position');
+        pos = [0.05 0.05 pos(3:4)];
+        set(hl,'position',pos)
+    end
+    
     axis square
 
     % ---------------------------------------
