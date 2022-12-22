@@ -3,21 +3,33 @@
 - master directoery is /mnt/scratch/BV_embed/P_neural_final
 - assumes pose data (json files) are in Data_json
 - assumes ephys data for each session is in the master folder
+
+- current code is setup to assume everything has been run already and just
+need to do analysis/generate figures. to re-run, set appropriate flags
 %}
 
 %% add code to path
+dbstop if error
+
 %{
 
 % repos
+if 0 % 
+path1 = 'C:\Users\HaydenLab\Documents\git\oms_internal';
+path2 = 'C:\Users\HaydenLab\Documents\git\ana_pose_neural_embed';
+ftpath = 'C:\Users\HaydenLab\Documents\_code\fieldtrip-master';
+else % freyr
+path1 = '/mnt/scratch/git/oms_internal';
+path2 = '/mnt/scratch/git/ana_pose_neural_embed';
+ftpath = '/mnt/scratch/__code/fieldtrip-20210212';
+end
+
 fprintf('adding repos...\n')
-s = 'C:\Users\HaydenLab\Documents\git\oms_internal';
-addpath(genpath(s))
-s = 'C:\Users\HaydenLab\Documents\git\ana_pose_neural_embed';
-addpath(genpath(s))
+addpath(genpath(path1))
+addpath(genpath(path2))
 
 % fieldtrip
 fprintf('adding fieldtrip...\n')
-ftpath = 'C:\Users\HaydenLab\Documents\_code\fieldtrip-master';
 rmpath(genpath(ftpath)); % it would have been added
 addpath(ftpath)
 ft_defaults
@@ -31,8 +43,8 @@ ft_detault.showcallinfo = 'no';
 [parentdir,jsondir,pyenvpath,rpath,binpath,codepath,ephyspath] = set_pose_paths(0);
 
 %% settings
-%datadir = '/mnt/scratch/BV_embed/P_neural_final_oldEmbed';
-datadir = 'D:\P_neural_final_oldEmbed';
+datadir = '/mnt/scratch/BV_embed/P_neural_final_oldEmbed';
+%datadir = 'D:\P_neural_final_oldEmbed';
 
 monks = {'yo','wo'};
 
@@ -47,11 +59,11 @@ runEmbedding_secondMonk = 0;
 runGraphCluster = 0;
 
 runAnalyses = 1;
-    anaMonks = [1 2];
-    anaEmbedding = 1;
-    anaBehavHier = 1;
-    anaEncoding = 1;
-    anaSwitch = 1;
+    anaMonks = [2];
+    anaEmbedding = 0;
+    anaBehavHier = 0;
+    anaEncoding = 0;
+    anaSwitch = 0;
 
 % prepare paths
 anadirs = {};
@@ -112,6 +124,7 @@ if runEmbedding_firstMonk
     ecfg.embedding_test = 1;
         ecfg.knntype = 'faiss';
         ecfg.K = 20;
+        ecfg.gputype = 1;
     ecfg.cluster_train = 1;
         ecfg.cluster_method = 'WATERSHED';
     ecfg.cluster_test = 1;
@@ -182,8 +195,8 @@ end
 if runAnalyses
 
     SEG_all = {};
-    for im1 = anaMonks
-        im = anaMonks(im1);
+    for im = anaMonks
+        %im = anaMonks(im1);
         
         % load
         monk = monks{im};
@@ -235,7 +248,7 @@ if runAnalyses
 
         end
         %}
-        
+        return
         % ------------------------------------------------------------
         % embedding analysis
         if anaEmbedding
@@ -255,6 +268,9 @@ if runAnalyses
             
             sname = [figdir '/embedding_train_test.pdf'];
             save2pdf(sname,gcf)
+
+            % validity of clusters
+            ana_cluster_validity
 
             % example actions and their embedding (Figure 2D-F)
             if im==1

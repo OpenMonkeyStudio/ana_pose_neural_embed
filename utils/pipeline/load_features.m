@@ -43,6 +43,8 @@ out.feat_labels = in.feat_labels;
 out.ifeat = in.ifeat;
 out.datasets = datasets;
 out.labels = in.labels;
-out.featInfo = in.featInfo;
+try,out.featInfo = in.featInfo;
+catch, out.featInfo = in.procInfo;
+end
 out.info = in.info;
 

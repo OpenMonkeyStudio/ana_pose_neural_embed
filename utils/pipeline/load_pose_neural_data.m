@@ -26,7 +26,7 @@ fprintf('loading embedding testing data...\n')
 
 % load orig data
 fprintf('\t dataset info ...\n')
-tmp = {'idat' 'com' 'frame' 'labels' 'datasets'};
+tmp = {'idat' 'com' 'frame' 'labels' 'datasets','idx_train'};
 load([anadir '/info.mat'],tmp{:})
 
 % load cluster results
