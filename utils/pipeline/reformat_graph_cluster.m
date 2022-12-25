@@ -6,7 +6,14 @@ function out = reformat_output(in,sz,ignoredStates)
     % prep
     nstate = numel(ignoredStates{1});
     ndat = size(ignoredStates,1);
-    mx_ncut = cellfun(@(x) max(x),in.ncut);
+    
+    bad = cellfun(@isempty,in.ncut);
+    in.tree_sampling_divergence(bad) = nan;
+    in.dasgupta_score(bad) = nan;
+    in.modularity(bad) = {nan};
+    in.ncut(bad) = {nan};
+    
+    mx_ncut = cellfun(@(x) max(double(x)),in.ncut);
     
     out = rmfield(in,'ncut');
 

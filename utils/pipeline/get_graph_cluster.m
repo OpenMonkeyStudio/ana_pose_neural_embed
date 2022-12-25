@@ -1,14 +1,22 @@
-function out = get_graph_cluster(C,idat,anadir)
+function out = get_graph_cluster(C,idat,anadir,trans_lags,mpathname)
 % out = get_graph_cluster(C,idat,anadir)
 
 %settings
 nrand = 10;
-trans_lags = [1:1:49, 50:5:100, 110:10:200, 300:100:1000];
+
+if nargin < 4 || isempty(trans_lags)
+    trans_lags = [1:1:49, 50:5:100, 110:10:200, 300:100:1000];
+end
+
+if nargin < 5 || isempty(mpathname)
+    mpathname = 'modularity_test';
+end
+
 
 % paths
 [parentdir,jsondir,pyenvpath,rpath,binpath,codepath,ephyspath] = set_pose_paths(0);
 
-mpath = [anadir '/modularity_test'];
+mpath = [anadir '/' mpathname];
 if ~exist(mpath); mkdir(mpath); end
 
 figdir = [anadir '/Figures'];
@@ -67,6 +75,10 @@ for id=1:max(idat)
         good = ignoredStates{id,3};
         po = po(good,good);
 
+        if isempty(po)
+            po = ones(2);
+        end
+        
         % store
         ii = ii+1;
         PO{ii} = po;
@@ -121,6 +133,10 @@ for ir=1:nrand
             good = ignoredStates{id,3};
             po = po(good,good);
 
+            if isempty(po)
+                po = ones(2);
+            end
+            
             % store
             ii = ii+1;
             PO{ii} = po;
