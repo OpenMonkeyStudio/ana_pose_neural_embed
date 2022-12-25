@@ -26,7 +26,7 @@ end
 
 
 %% cluster validity
-if 0
+if 1
     fprintf('getting vluster validity...\n')
 
     nrand = 20;
