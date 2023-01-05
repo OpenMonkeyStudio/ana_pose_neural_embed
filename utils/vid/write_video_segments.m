@@ -3,9 +3,10 @@ function status = write_video_segments(src,dst,segs_in)
 %
 % segs must be in seconds
 
-verbose = 0;
+verbose = 1;
 
 % prepare anti-trimming segs
+%{
 tmps = sort(segs_in(:));
 
 segs = [];
@@ -20,7 +21,10 @@ for ii=2:2:numel(tmps)-1
     segs(is,:) = [tmps(ii) tmps(ii+1)];
     is=is+1;
 end
-segs(end+1,:) = [tmps(end) 10*60*60];
+%segs(end+1,:) = [tmps(end) 10*60*60];
+%}
+    
+segs=segs_in;
 
 % prepare filter strings
 segstr = '';

@@ -11,7 +11,7 @@ function cluster_example_videos(C,frame,cfg)
 % settings
 cfg = checkfield(cfg,'dstpath','needit');
 cfg = checkfield(cfg,'vidnames','needit');
-cfg = checkfield(cfg,'dThresh',5);
+cfg = checkfield(cfg,'dThresh',[5 30]);
 cfg = checkfield(cfg,'nrand',10);
 cfg = checkfield(cfg,'suffix','');
 
@@ -33,13 +33,15 @@ for ic=1:nstate
     %st = frame(st);
     %fn = frame(fn);
     
-    d = fn - st + 1;
-    tooShort = d < cfg.dThresh;
-    st(tooShort) = [];
-    fn(tooShort) = [];
-    d(tooShort) = [];
+    d = ( frame(fn) - frame(st) ) ./ fs;
+    tooShort = d < cfg.dThresh(1);
+    tooLong = d > cfg.dThresh(2);
+    bad = tooShort | tooLong;
+    st(bad) = [];
+    fn(bad) = [];
+    d(bad) = [];
     segs = [frame(st) frame(fn)] ./ fs;
-    segs = round(segs);
+    segs = round(segs,2);
 
     if size(segs,1)==0
         fprintf('... no segments selected\n')
@@ -67,7 +69,7 @@ for ic=1:nstate
 
     % now combine them into one for easy viewing
     dst = sprintf('%s/cluster%03g_%s%s',cfg.dstpath,ic,cfg.suffix,ext);        
-    stack_videos(tmpdst,dst)
+    stack_videos(tmpdst,dst);
 
     % clean
     for ii=1:numel(tmpdst)

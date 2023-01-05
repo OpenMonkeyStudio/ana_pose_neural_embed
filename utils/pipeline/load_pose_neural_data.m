@@ -49,6 +49,23 @@ if exist(sname,'file')
     res_mod = load(sname);
 end
     
+mpath2 = [anadir '/modularity_test_collapse'];
+dd= dir([mpath2 '/naction*']);
+
+if numel(dd) > 0
+    res_mod_collapse = [];
+    for ii=1:numel(dd)
+        name = dd(ii).name;
+        n = str2double(name(8:end));
+        tmp = load([mpath2 '/' name '/modularity_train.mat']);
+        tmp.naction = n;
+        res_mod_collapse = cat(1,res_mod_collapse,tmp);
+    end
+    
+    [~,is] = sort([res_mod_collapse.naction]);
+    res_mod_collapse = res_mod_collapse(is);
+end
+
 %% load neural data
 [SDF,sdfnames] = load_back_sdf(sdfpath_data,useSDF_resid,{},{},loadAreas,1,forceAreaUpdate);
 
