@@ -1,9 +1,10 @@
 function out = ana_action_encoding(cfg,SDF,res_mod,C,iarea,idat)
 % out = ana_action_encoding(cfg,SDF,res_mod,C,iarea)
 
-% checks
+% checks savesuffix
 cfg = checkfield(cfg,'sdfpath','needit');
 cfg = checkfield(cfg,'figdir','needit');
+cfg = checkfield(cfg,'savesuffix','');
 cfg = checkfield(cfg,'datasets','needit');
 cfg = checkfield(cfg,'nstate',max(C));
 cfg = checkfield(cfg,'nparallel',15);
@@ -44,7 +45,7 @@ spkparentpath = fileparts(fileparts(sdfpath));
 
 
 %% classificaiton on individual neurons
-sname = [sdfpath '/' testtype '_actions.mat'];
+sname = [sdfpath '/' testtype '_actions' cfg.savesuffix '.mat'];
 if cfg.get_encoding
     ncuts = numel(theseCuts);
     nrand2 = nrand+1;
@@ -106,7 +107,7 @@ if cfg.get_encoding
                     oldval = 1:nstate;
                     c = C_noBroadcast{id2};
                     c = changem(c,newval,oldval);
-                    c = clean_states(c,3,0);
+                    %c = clean_states(c,3,0);
                 end
             end
 
@@ -177,7 +178,7 @@ if cfg.get_encoding
         end
         
         F(id,:,:) = ftmp;
-        Fr(id,:,:,:) = ftmp;
+        Fr(id,:,:,:) = frtmp;
         P(id,:,:) = ptmp;
     catch err
         fprintf('error on %g\n',id)

@@ -19,12 +19,14 @@ end
 % checks
 cfg = checkfield(cfg,'sdfpath','');
 cfg = checkfield(cfg,'figdir','needit');
+cfg = checkfield(cfg,'plot',1);
 cfg = checkfield(cfg,'datasets','');
 cfg = checkfield(cfg,'fs_frame',30);
 cfg = checkfield(cfg,'nparallel',15);
 cfg = checkfield(cfg,'uarea','needit');
 
 cfg = checkfield(cfg,'only_nonengage',1);
+cfg = checkfield(cfg,'plot_lim',[-1 1]);
 cfg = checkfield(cfg,'seg_lim',[-1 1]);
 cfg = checkfield(cfg,'seg_min',0.2);
 cfg = checkfield(cfg,'eng_smooth',1);
@@ -42,6 +44,7 @@ fs_frame = cfg.fs_frame;
 uarea = cfg.uarea;
 
 onlyNonEngage = cfg.only_nonengage;
+plim = cfg.plot_lim;
 lim = cfg.seg_lim;
 minSeg = cfg.seg_min;
 smoothWin = ceil(cfg.eng_smooth*fs_frame);
@@ -51,6 +54,8 @@ doWeightedMean = cfg.weighted_mean;
 normtype = cfg.normtype;
 
 spkparentpath = fileparts(fileparts(sdfpath));
+
+if ~exist(figdir); mkdir(figdir); end
 
 %% peri-transition PSTHs
 %strs1 = {'all','nonengage'};
@@ -84,12 +89,18 @@ if calcSeg
         tooShort = d < minSeg*fs_frame;
         istate(tooShort) = [];
 
-        % create indices
-        s1 = abs(lim(1)*fs_frame);
-        s2 = abs(lim(2)*fs_frame);
-        istate(istate <= s1) = [];
-        istate(istate + s2 > numel(c)) = [];
+        % get rid of segments where pre/post switch happened within limits
+        %s1 = abs(lim(1)*fs_frame);
+        %s2 = abs(lim(2)*fs_frame);
+        %istate(istate <= s1) = [];
+        %istate(istate + s2 > numel(c)) = [];
 
+        % create indices
+        s1 = abs(plim(1)*fs_frame);
+        s2 = abs(plim(2)*fs_frame);
+        istate(istate <= s1) = []; % get rid of initial/end segments if dont fit in lims
+        istate(istate + s2 > numel(c)) = [];
+        
         idx = -s1:s2;
         idx = [ repmat(idx,numel(istate),1) + istate ]';
         idx = [idx(:)];
@@ -97,7 +108,7 @@ if calcSeg
         % extract
         ncell = sum( cellfun(@numel,{sdf.area}) );
         ndat = numel(istate);
-        nsmp = diff(lim*fs_frame)+1;
+        nsmp = diff(plim*fs_frame)+1;
 
         xs = Xs(:,idx);
         xs = reshape(xs,[ncell,nsmp,ndat]);
@@ -147,8 +158,8 @@ if calcSeg
 end
 
 %% PREP
-st = lim(1)*fs_frame;
-fn = lim(2)*fs_frame;
+st = plim(1)*fs_frame;
+fn = plim(2)*fs_frame;
 xtime = [st:fn] ./ fs_frame;
     
 % areas
@@ -161,8 +172,8 @@ fprintf('extracting seg means per cell...\n')
 MU = [];
 for id=1:numel(RES_seg)
     tmp = RES_seg(id).seg;
-    pre = tmp(:,:,xtime<0);
-    post = tmp(:,:,xtime>0);
+    pre = tmp(:,:,xtime<0 & xtime>lim(1));
+    post = tmp(:,:,xtime>0 & xtime<lim(2));
     c = RES_seg(id).C_seg(:,2); % pre OR post state
 
     % time series
@@ -198,97 +209,97 @@ MU(bad) = nan;
     
 
 %% PLOTTING
+if cfg.plot
+    % start figure
+    figure;
+    nr = 1; nc = 2;
+    set_bigfig(gcf,[0.6 0.4])
+    cols = get_safe_colors(0,[1:5 7]);
 
-% start figure
-figure;
-nr = 1; nc = 2;
-set_bigfig(gcf,[0.6 0.4])
-cols = get_safe_colors(0,[1:5 7]);
-    
-    
-% plot mean timesries, split by area
-[mu,se] = avganderror_group(iarea,MU,avgtype,100);
-    
-p = [];
-for ii=1:size(MU,2)
-    if strcmp(avgtype,'median')
-        p(ii) = kruskalwallis(MU(:,ii),iarea,'off');
-        teststr = 'KW';
-    else
-        p(ii) = anovan(MU(:,ii),iarea,'display','off');
-        teststr = 'Anova';
+
+    % plot mean timesries, split by area
+    [mu,se] = avganderror_group(iarea,MU,avgtype,100);
+
+    p = [];
+    for ii=1:size(MU,2)
+        if strcmp(avgtype,'median')
+            p(ii) = kruskalwallis(MU(:,ii),iarea,'off');
+            teststr = 'KW';
+        else
+            p(ii) = anovan(MU(:,ii),iarea,'display','off');
+            teststr = 'Anova';
+        end
     end
-end
-p = bonf_holm(p);
-    
-mup = ones(size(xtime)) * max([mu(:)+se(:)]) * 1.05;
-mup(p>0.05) = nan;
+    p = bonf_holm(p);
 
-subplot(nr,nc,1)
-h = [];
-for ii=1:size(mu,1)
-    if 1
-        htmp = shadedErrorBar(xtime,mu(ii,:),se(ii,:),{'-','color',cols(ii,:)},0);
-        h(ii) = htmp.mainLine;
-    else
-        h(ii) = plot(xtime,mu(ii,:),'color',cols(ii,:));
+    mup = ones(size(xtime)) * max([mu(:)+se(:)]) * 1.05;
+    mup(p>0.05) = nan;
+
+    subplot(nr,nc,1)
+    h = [];
+    for ii=1:size(mu,1)
+        if 1
+            htmp = shadedErrorBar(xtime,mu(ii,:),se(ii,:),{'-','color',cols(ii,:)},0);
+            h(ii) = htmp.mainLine;
+        else
+            h(ii) = plot(xtime,mu(ii,:),'color',cols(ii,:));
+        end
+        hold all
+    end
+    plot(xtime,mup,'k.')
+
+    pcl('x',0)
+    legend(h,uarea,'location','northwest')
+
+    title('mean rate, normalized to pre switch')
+    xlabel('time')
+    ylabel([avgtype ' baseline-norm rate'])
+
+    axis square
+
+    % plot pre/post
+    pre = nanmean(MU(:,xtime < 0 & xtime > lim(1)),2);
+    post = nanmean(MU(:,xtime > 0 & xtime < lim(2)),2);
+    dSeg = post - pre;
+    [mu,se] = avganderror_group(iarea,dSeg,avgtype,100);
+    [~,T] = kruskalwallis(dSeg,iarea,'off');
+    fa = T{2,5};
+    pa = T{2,6};
+
+    p = [];
+    for ia=1:numel(uarea)
+        sela = iarea==ia;
+        tmp = dSeg(sela);
+        p(ia) = signrank(tmp);
+    end
+    mup = ones(size(mu)) * max(mu+se)*1.05;
+    mup(p>0.05) = nan;
+
+    subplot(nr,nc,2)
+    hb=[];
+    for ia=1:numel(uarea)
+        hb(ia) = barwitherr(se(ia),ia,mu(ia));
+        set(hb(ia),'facecolor',cols(ia,:));
+        hold all
     end
     hold all
+    plot(1:numel(uarea),mup,'k.')
+
+    s = sprintf('post-pre diff\n%s X2=%.3g, p=%.3g',teststr,fa,pa);
+    title(s)
+    ylabel([avgtype ' norm post-pre diff'])
+
+    set(gca,'xtick',1:numel(uarea),'xticklabel',uarea)
+    axis square
+
+
+    % save
+    strs1 = {'all','nonengage'};
+    sname = sprintf('%s/sdf_switch_%s_%s_weighted%g.pdf',figdir,strs1{onlyNonEngage+1},normtype,doWeightedMean);
+    save2pdf(sname)
+
+    foo=1;
 end
-plot(xtime,mup,'k.')
-    
-pcl('x',0)
-legend(h,uarea,'location','northwest')
-
-title('mean rate, normalized to pre switch')
-xlabel('time')
-ylabel([avgtype ' baseline-norm rate'])
-
-axis square
-    
-% plot pre/post
-pre = nanmean(MU(:,xtime < 0),2);
-post = nanmean(MU(:,xtime > 0),2);
-dSeg = post - pre;
-[mu,se] = avganderror_group(iarea,dSeg,avgtype,100);
-[~,T] = kruskalwallis(dSeg,iarea,'off');
-fa = T{2,5};
-pa = T{2,6};
-
-p = [];
-for ia=1:numel(uarea)
-    sela = iarea==ia;
-    tmp = dSeg(sela);
-    p(ia) = signrank(tmp);
-end
-mup = ones(size(mu)) * max(mu+se)*1.05;
-mup(p>0.05) = nan;
-
-subplot(nr,nc,2)
-hb=[];
-for ia=1:numel(uarea)
-    hb(ia) = barwitherr(se(ia),ia,mu(ia));
-    set(hb(ia),'facecolor',cols(ia,:));
-    hold all
-end
-hold all
-plot(1:numel(uarea),mup,'k.')
-
-s = sprintf('post-pre diff\n%s X2=%.3g, p=%.3g',teststr,fa,pa);
-title(s)
-ylabel([avgtype ' norm post-pre diff'])
-
-set(gca,'xtick',1:numel(uarea),'xticklabel',uarea)
-axis square
-    
-    
-% save
-strs1 = {'all','nonengage'};
-sname = sprintf('%s/sdf_switch_%s_%s_weighted%g.pdf',figdir,strs1{onlyNonEngage+1},normtype,doWeightedMean);
-save2pdf(sname)
-
-foo=1;
-
 
 %% prep output
 out = [];

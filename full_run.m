@@ -59,7 +59,11 @@ runEmbedding_secondMonk = 0;
 runGraphCluster = 0;
 
 runAnalyses = 1;
-    anaMonks = [2];
+    anaMonks = [1];
+    modExamples = [8 3];
+    
+    makeExampleActionVideos = 0;
+    makeExampleModuleVideos = 0;
     anaEmbedding = 0;
     anaBehavHier = 0;
     anaEncoding = 0;
@@ -181,13 +185,57 @@ end
 
 %% graph clusterin
 if runGraphCluster
-    tic
+    ST = tic;
+    
+    % loop over monks
     for im=1:numel(monks)
         anadir = anadirs{im};
         load_pose_neural_data
+        
+        tic
         tmp = get_graph_cluster(C,idat,anadir);
+        toc
+        
+        % get peaks, to collapse actions
+        if 0
+            tic
+
+            nlabel = max(C_train);
+            Ld = cluster_train.Ld;
+            xv = cluster_train.outClust.xv;
+            yv = cluster_train.outClust.yv;
+
+            peaks = [];
+            for ic=1:nlabel
+
+                [icol,irow] = find(Ld==ic);
+
+                icol = floor(median(icol));
+                irow = floor(median(irow));
+                xy = double([xv(irow) yv(icol)]);
+                peaks(ic,:) = xy;
+            end
+            zpeaks = linkage(peaks);
+
+            ncollapse = size(peaks,1)-1:-1:4;
+
+            % loop over each peak
+            for ii=1:numel(ncollapse)
+                cp = cluster(zpeaks,'maxclust',ncollapse(ii));
+
+                Cp = changem(C,cp,1:nlabel);
+
+                % run graph clustering
+                mpathname = sprintf('modularity_test_collapse/naction%g',ncollapse(ii));
+                tmp2 = get_graph_cluster(Cp,idat,anadir,1,mpathname);
+            end
+            toc
+        end
+        foo=1;
     end
-    toc
+    
+    FN = toc(ST);
+    fprintf('TOTAL ELAPSED TIME, GRAPHY CLUSTER: %g\n',FN)
 end
 
 
@@ -210,9 +258,8 @@ if runAnalyses
         ana_summary
 
         % make videos of all actions
-        % never quite got it working
-        %{
-        if makeExampleVideos && im==1
+        %
+        if makeExampleActionVideos && im==1
             dstpath = [anadir '/Vid_clusters'];
 
             % make videos
@@ -231,7 +278,7 @@ if runAnalyses
 
                     % call
                     vcfg = [];
-                    vcfg.dThresh = 30;
+                    vcfg.dThresh = [0.5 10]; %sec
                     vcfg.nrand = 10;
                     vcfg.dstpath = dstpath;
                     vcfg.suffix = sprintf('id%g',id);
@@ -245,10 +292,72 @@ if runAnalyses
             end
 
             fprintf('TOTAL VIDEO TIME: %g',toc(ST))
-
         end
+        
+        
+        % example videos of modules
+        if makeExampleModuleVideos
+            dstpath = [anadir '/Vid_modules'];
+
+            % make videos
+            id = modExamples(im);
+            
+            ST = tic;
+            try
+                tic
+                sel = idat==id;
+                tmpc = cluster_test.clabels(sel);
+                f = frame(sel);
+
+                % re-map actiions to modules
+                q = squeeze(res_mod.obs.modularity(1,id,:));
+                [~,imx] = max(q);
+                newval = res_mod.obs.labels_cut(1,id,imx,:);
+                tmpc2 = changem(tmpc,newval,1:nstate);
+
+                % only use segments that have >1 action
+                d = find(diff(tmpc2)~=0);
+                st = [1; d+1];
+                fn = [d; numel(tmpc2)];
+
+                bad = false(numel(st),1);
+                for is=1:numel(st)
+                    tmp = tmpc(st(is):fn(is));
+                    n = numel(unique(tmp));
+                    bad(is) = n < 2;
+                end
+
+                good = fill_logical(numel(f),[st(~bad), fn(~bad)]);
+                f(~good) = [];
+                tmpc2(~good) = [];
+                tmpc(~good) = [];
+
+                % vid anems
+                name = datasets(id).name;
+                vidnames = {'vid_18261112_full.mp4','vid_18261030_full.mp4'};
+                vidnames = cellfun(@(x) [fileparts(anadir) '/' name '/vids/' x],vidnames,'un',0);
+
+                % call
+                vcfg = [];
+                vcfg.dThresh = [0.5 30]; %sec
+                vcfg.nrand = 15;
+                vcfg.dstpath = dstpath;
+                vcfg.suffix = sprintf('id%g',id);
+                vcfg.vidnames = vidnames;
+                cluster_example_videos(tmpc2,f,vcfg)
+                toc
+                fprintf('\n')
+            catch
+                error('error on %g',id)
+            end
+
+            fprintf('TOTAL VIDEO TIME: %g',toc(ST))
+         end
+        
+         
         %}
-        return
+
+        
         % ------------------------------------------------------------
         % embedding analysis
         if anaEmbedding
@@ -296,6 +405,8 @@ if runAnalyses
             end
 
             ana_mod_hierarchy(cfg,res_mod) %(Figure 3)
+            
+            ana_mod_hierarchy_collapse
         end
 
         % ------------------------------------------------------------
@@ -314,11 +425,12 @@ if runAnalyses
             cfg = [];
             cfg.sdfpath = sdfpath;
             cfg.figdir = figdir;
+            cfg.savesuffix = '_test2';
             cfg.datasets = datasets;
             cfg.nstate = nstate;
             cfg.fs_frame = fs_frame;
             cfg.uarea = uarea;
-            cfg.get_encoding = 0;
+            cfg.get_encoding = 1;
                 cfg.testtype = 'kw';
                 cfg.nrand = 20;
                 cfg.nboot = 1;
@@ -327,7 +439,7 @@ if runAnalyses
                 cfg.theseCuts = [2:8 10:2:20 23:3:31, nstate];
 
             out_encode = ana_action_encoding(cfg,SDF,res_mod,C,iarea,idat);
-
+            
             % predict encoding from elec position (Figure 5)
             cfg = [];
             cfg.monk = monks{im};
@@ -345,6 +457,60 @@ if runAnalyses
                 cfg.nbin = nbins(ib);
                 ana_depth_corr(cfg,Var,SDF,iarea);
             end
+            
+            % --------------------------------------------------------
+            % control: action encoding, unique cells
+            [isFirst,area,days] = select_unique_cells(monk);
+            [ich,iday] = find(isFirst);
+
+            ch = [SDF.ch];
+            day = {SDF.day};
+            good = false(size(SDF));
+            for ii=1:numel(ich)
+                sel = ch==ich(ii) & strcmp(day,days{iday(ii)});
+                good(sel) = 1;
+            end
+
+            % cull
+            SDF2 = SDF(good);
+            sdfnames2 = sdfnames(good);
+            iarea2 = iarea(good);
+            areas2 = areas(good);
+            
+            % action encoding
+            figdir2 = [figdir '_onlyFirstCell'];
+            if ~exist(figdir2); mkdir(figdir2); end
+            
+            cfg = [];
+            cfg.sdfpath = sdfpath;
+            cfg.figdir = figdir2;
+            cfg.savesuffix = '_onlyFirst';
+            cfg.datasets = datasets;
+            cfg.nstate = nstate;
+            cfg.fs_frame = fs_frame;
+            cfg.uarea = uarea;
+            cfg.get_encoding = 1;
+                cfg.testtype = 'kw';
+                cfg.nrand = 20;
+                cfg.nboot = 1;
+                cfg.eng_lim = [3, ceil(1*cfg.fs_frame)];
+                cfg.ilag = 1;
+                cfg.theseCuts = [2:8 10:2:20 23:3:31, nstate];
+
+            out_encode_first = ana_action_encoding(cfg,SDF2,res_mod,C,iarea2,idat);
+            
+             % predict encoding from elec position
+            cfg = [];
+            cfg.monk = monks{im};
+            cfg.figdir = figdir2;
+            cfg.model_binned = 0;
+            cfg.varname = 'kwF';
+            cfg.uarea = uarea;
+
+            Var = out_encode_first.A_act(:,:,1);
+            out_depth_encode_first = ana_depth_corr(cfg,Var,SDF2,iarea2);
+
+            
         end
         
         % ------------------------------------------------------------
@@ -353,14 +519,15 @@ if runAnalyses
             % switch sdf (Figure 6B)
             cfg = [];
             cfg.sdfpath = sdfpath;
-            cfg.figdir = figdir;
+            cfg.figdir = [figdir '_controlSwitch'];
             cfg.datasets = datasets;
             cfg.fs_frame = fs_frame;
             cfg.uarea = uarea;
 
             cfg.only_nonengage = 0;
+            cfg.plot_lim = [-1 1];
             cfg.seg_lim = [-1 1];
-            cfg.seg_min = 0.2;
+            cfg.seg_min = 0.2; % 0.2
             cfg.eng_smooth = 1;
 
             cfg.avgtype = 'median';
@@ -406,11 +573,12 @@ if runAnalyses
         cfg.fs_frame = fs_frame;
         cfg.uarea = uarea;
 
+        cfg.plot_lim = SEG_all{1,iseg}.cfg.plot_lim;
+        cfg.seg_lim = SEG_all{1,iseg}.cfg.seg_lim;
         cfg.avgtype = 'median';
         cfg.normtype = 'preswitch';
         cfg.weighted_mean = 0;
 
         tmp = ana_switch_sdf(cfg,res_tmp);
-    end
-    
+    end    
 end

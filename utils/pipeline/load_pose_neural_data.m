@@ -3,7 +3,9 @@
 %% settings
 
 % neural
+%useFirstCell = 1;
 useSDF_resid = 1;
+
 forceAreaUpdate = 0;
 loadAreas = {'ACC','VLPFC','DLPFC','OFC','SMA','PM'};
 areaOrder = {'PM','SMA','DLPFC','VLPFC','ACC','OFC'};
