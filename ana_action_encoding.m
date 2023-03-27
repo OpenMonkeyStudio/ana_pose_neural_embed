@@ -107,7 +107,7 @@ if cfg.get_encoding
                     oldval = 1:nstate;
                     c = C_noBroadcast{id2};
                     c = changem(c,newval,oldval);
-                    %c = clean_states(c,3,0);
+                    c = clean_states(c,3,0);
                 end
             end
 

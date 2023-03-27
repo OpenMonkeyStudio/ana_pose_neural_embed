@@ -18,9 +18,13 @@ if 0 %
 path1 = 'C:\Users\HaydenLab\Documents\git\oms_internal';
 path2 = 'C:\Users\HaydenLab\Documents\git\ana_pose_neural_embed';
 ftpath = 'C:\Users\HaydenLab\Documents\_code\fieldtrip-master';
-else % freyr
+elseif 0 % freyr
 path1 = '/mnt/scratch/git/oms_internal';
 path2 = '/mnt/scratch/git/ana_pose_neural_embed';
+ftpath = '/mnt/scratch/__code/fieldtrip-20210212';
+elseif 1 % freyr
+path1 = '/mnt/scratch/BV_embed/P_neural_transfer/__code/ana_pose_neural_embed';
+path2 = '/mnt/scratch/BV_embed/P_neural_transfer/__code/oms_internal';
 ftpath = '/mnt/scratch/__code/fieldtrip-20210212';
 end
 
@@ -44,6 +48,7 @@ ft_detault.showcallinfo = 'no';
 
 %% settings
 datadir = '/mnt/scratch/BV_embed/P_neural_final_oldEmbed';
+datadir = '/mnt/scratch/BV_embed/P_neural_transfer';
 %datadir = 'D:\P_neural_final_oldEmbed';
 
 monks = {'yo','wo'};
@@ -59,7 +64,7 @@ runEmbedding_secondMonk = 0;
 runGraphCluster = 0;
 
 runAnalyses = 1;
-    anaMonks = [1];
+    anaMonks = [1 2];
     modExamples = [8 3];
     
     makeExampleActionVideos = 0;
@@ -67,7 +72,7 @@ runAnalyses = 1;
     anaEmbedding = 0;
     anaBehavHier = 0;
     anaEncoding = 0;
-    anaSwitch = 0;
+    anaSwitch = 1;
 
 % prepare paths
 anadirs = {};
@@ -76,7 +81,7 @@ for im=1:numel(monks)
     if ~exist(s); mkdir(s); end
     anadirs{im} = s;
     
-    f = [s '/Figures'];
+    f = [s '/Figures2'];
     if ~exist(f); mkdir(f); end    
 end
 
