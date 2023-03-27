@@ -1,3 +1,6 @@
+%%settings
+act_lim = [4 Inf];
+
 %% prep
 DGS = cellfun(@(x) x.dasgupta_score,{res_mod_collapse.obs},'un',0);
 DGS = cat(1,DGS{:});
@@ -13,6 +16,14 @@ Qr = cat(1,Qr{:});
 Qr = squeeze(Qr);
 
 naction = [res_mod_collapse.naction];
+
+% downsample
+sel = naction >= act_lim(1) & naction <= act_lim(2);
+naction(~sel) = [];
+DGS(~sel,:,:) = [];
+DGSr(~sel,:,:) = [];
+Q(~sel,:,:) = [];
+Qr(~sel,:,:) = [];
 
 % where does modularity stop changing?
 bad = sum(~isnan(Q),2) < 2;
