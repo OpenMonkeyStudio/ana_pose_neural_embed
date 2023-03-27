@@ -64,14 +64,15 @@ runEmbedding_secondMonk = 0;
 runGraphCluster = 0;
 
 runAnalyses = 1;
+    useSDF_resid = 0; % used by load_pose_neural_data
     anaMonks = [1 2];
     modExamples = [8 3];
     
     makeExampleActionVideos = 0;
     makeExampleModuleVideos = 0;
     anaEmbedding = 0;
-    anaBehavHier = 1;
-    anaEncoding = 0;
+    anaBehavHier = 0;
+    anaEncoding = 1;
     anaSwitch = 0;
 
 % prepare paths
@@ -254,7 +255,13 @@ if runAnalyses
         % load
         monk = monks{im};
         anadir = anadirs{im};
-        figdir = [anadir '/Figures'];
+        
+        if useSDF_resid==1
+            figdir = [anadir '/Figures'];
+        else
+            figdir = [anadir '/Figures_noResid'];
+        end
+
         if ~exist(figdir); mkdir(figdir); end
         
         load_pose_neural_data
