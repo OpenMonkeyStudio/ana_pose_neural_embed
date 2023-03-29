@@ -175,3 +175,6 @@ s = sprintf('cluster-pair validity as a function of embedding distances\nmean pr
 title(s)
 ylabel('mean DaviesBouldin diff (=obs-rand)')
 xlabel('embedding distance')
+
+sname = [figdir '/embedding_validity_actionPairs.pdf'];
+save2pdf(sname,gcf)
