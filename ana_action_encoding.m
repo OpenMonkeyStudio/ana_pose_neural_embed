@@ -71,7 +71,7 @@ if cfg.get_encoding
       
     fprintf('indiv neuron encoding: ')
     parfor id=1:ndat
-    %for id=1:ndat
+    %for id=32%1:ndat
     try
         fprintf('%g,',id)
         
@@ -86,9 +86,9 @@ if cfg.get_encoding
         m = max(tmp,[],2);
         maxCuts = max(m);
 
-        ftmp = [];
-        frtmp = [];
-        ptmp = [];
+        ftmp = nan(ncuts,nboot);
+        frtmp = nan(ncuts,nboot,nrand);
+        ptmp = nan(ncuts,nboot);
         
         dat_cuts = cell(ncuts,3);
         for ic1=1:ncuts
@@ -238,7 +238,7 @@ A = A(:,1:end-1,:);
 % plot
 
 figure;
-nr = 2; nc = 4;
+nr = 2; nc = 5;
 set_bigfig(gcf,[0.6 0.7],[0.4 0.27])
 set(gcf,'units','normalized')
 pos = get(gcf,'position');
@@ -330,6 +330,26 @@ for ip=1:2
     ylabel(['spearman R'])
 
     set(gca,'xtick',1:numel(mu),'xticklabel',uarea)
+    axis square 
+    
+    % ---------------------------------------
+    % max # clusters per encoding
+    [~,im] = max(A(:,:,ip),[],2);
+    [mu,se] = avganderror_group(iG,im,'mean',200);
+    
+    ns = 5 + nc*(ip-1);
+    subplot(nr,nc,ns)
+    for ii=1:size(mu,1)
+        m = mu(ii);
+        s = se(ii);
+        hb = errorbar(ii,m,s,'.','color',cols(ii,:),'markersize',20);
+        hold all
+    end
+
+    title('nclust @ max encoding')
+    ylabel([avgtype ' # nclust'])
+
+    set(gca,'xtick',1:numel(mu),'xticklabel',uarea,'xlim',[0.5 numel(mu)+0.5])
     axis square
 end
 

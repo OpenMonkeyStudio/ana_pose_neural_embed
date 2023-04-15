@@ -64,7 +64,7 @@ runEmbedding_secondMonk = 0;
 runGraphCluster = 0;
 
 runAnalyses = 1;
-    useSDF_resid = 0; % used by load_pose_neural_data
+    useSDF_resid = 1; % used by load_pose_neural_data
     anaMonks = [1 2];
     modExamples = [8 3];
     
@@ -437,7 +437,7 @@ if runAnalyses
             cfg = [];
             cfg.sdfpath = sdfpath;
             cfg.figdir = figdir;
-            cfg.savesuffix = '_test2';
+            cfg.savesuffix = '';
             cfg.datasets = datasets;
             cfg.nstate = nstate;
             cfg.fs_frame = fs_frame;
@@ -469,60 +469,6 @@ if runAnalyses
                 cfg.nbin = nbins(ib);
                 ana_depth_corr(cfg,Var,SDF,iarea);
             end
-            
-            % --------------------------------------------------------
-            % control: action encoding, unique cells
-            [isFirst,area,days] = select_unique_cells(monk);
-            [ich,iday] = find(isFirst);
-
-            ch = [SDF.ch];
-            day = {SDF.day};
-            good = false(size(SDF));
-            for ii=1:numel(ich)
-                sel = ch==ich(ii) & strcmp(day,days{iday(ii)});
-                good(sel) = 1;
-            end
-
-            % cull
-            SDF2 = SDF(good);
-            sdfnames2 = sdfnames(good);
-            iarea2 = iarea(good);
-            areas2 = areas(good);
-            
-            % action encoding
-            figdir2 = [figdir '_onlyFirstCell'];
-            if ~exist(figdir2); mkdir(figdir2); end
-            
-            cfg = [];
-            cfg.sdfpath = sdfpath;
-            cfg.figdir = figdir2;
-            cfg.savesuffix = '_onlyFirst';
-            cfg.datasets = datasets;
-            cfg.nstate = nstate;
-            cfg.fs_frame = fs_frame;
-            cfg.uarea = uarea;
-            cfg.get_encoding = 1;
-                cfg.testtype = 'kw';
-                cfg.nrand = 20;
-                cfg.nboot = 1;
-                cfg.eng_lim = [3, ceil(1*cfg.fs_frame)];
-                cfg.ilag = 1;
-                cfg.theseCuts = [2:8 10:2:20 23:3:31, nstate];
-
-            out_encode_first = ana_action_encoding(cfg,SDF2,res_mod,C,iarea2,idat);
-            
-             % predict encoding from elec position
-            cfg = [];
-            cfg.monk = monks{im};
-            cfg.figdir = figdir2;
-            cfg.model_binned = 0;
-            cfg.varname = 'kwF';
-            cfg.uarea = uarea;
-
-            Var = out_encode_first.A_act(:,:,1);
-            out_depth_encode_first = ana_depth_corr(cfg,Var,SDF2,iarea2);
-
-            
         end
         
         % ------------------------------------------------------------
