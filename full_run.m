@@ -12,20 +12,15 @@ need to do analysis/generate figures. to re-run, set appropriate flags
 dbstop if error
 
 %{
-
 % repos
 if 0 % 
-path1 = 'C:\Users\HaydenLab\Documents\git\oms_internal';
-path2 = 'C:\Users\HaydenLab\Documents\git\ana_pose_neural_embed';
-ftpath = 'C:\Users\HaydenLab\Documents\_code\fieldtrip-master';
+    path1 = 'C:\Users\HaydenLab\Documents\git\oms_internal';
+    path2 = 'C:\Users\HaydenLab\Documents\git\ana_pose_neural_embed';
+    ftpath = 'C:\Users\HaydenLab\Documents\_code\fieldtrip-master';
 elseif 1 % freyr
-path1 = '/mnt/scratch/git/oms_internal';
-path2 = '/mnt/scratch/git/ana_pose_neural_embed';
-ftpath = '/mnt/scratch/__code/fieldtrip-20210212';
-elseif 0 % freyr
-path1 = '/mnt/scratch/BV_embed/P_neural_transfer/__code/ana_pose_neural_embed';
-path2 = '/mnt/scratch/BV_embed/P_neural_transfer/__code/oms_internal';
-ftpath = '/mnt/scratch/__code/fieldtrip-20210212';
+    path1 = '/mnt/scratch/git/oms_internal';
+    path2 = '/mnt/scratch/git/ana_pose_neural_embed';
+    ftpath = '/mnt/scratch/__code/fieldtrip-20210212';
 end
 
 fprintf('adding repos...\n')
@@ -47,9 +42,7 @@ ft_detault.showcallinfo = 'no';
 [parentdir,jsondir,pyenvpath,rpath,binpath,codepath,ephyspath] = set_pose_paths(0);
 
 %% settings
-datadir = '/mnt/scratch/BV_embed/P_neural_final_oldEmbed';
-%datadir = '/mnt/scratch/BV_embed/P_neural_transfer';
-%datadir = 'D:\P_neural_final_oldEmbed';
+datadir = '/mnt/scratch/BV_embed/P_neural_final';
 
 monks = {'yo','wo'};
 
@@ -72,7 +65,7 @@ runAnalyses = 1;
     makeExampleModuleVideos = 0;
     anaEmbedding = 0;
     anaBehavHier = 0;
-    anaEncoding = 1;
+    anaEncoding = 0;
     anaSwitch = 0;
 
 % prepare paths
@@ -80,10 +73,13 @@ anadirs = {};
 for im=1:numel(monks)
     s = [datadir '/embed_rhesus_' monks{im}];
     if ~exist(s); mkdir(s); end
-    anadirs{im} = s;
+    anadirs{im,1} = s;
     
-    f = [s '/Figures2'];
-    if ~exist(f); mkdir(f); end    
+    if useSDF_resid; f = [s '/Figures'];
+    else; f = [s '/Figures_noResid'];
+    end
+    if ~exist(f); mkdir(f); end   
+    anadirs{im,2} = f;
 end
 
 %% run pose preprocessing for both monks
@@ -111,7 +107,7 @@ end
 % now, get neural time series for each cell
 if runSdfMatching
     for im=1:numel(monks)
-        get_matched_sdf(anadirs{im},monks{im})
+        get_matched_sdf(anadirs{im,1},monks{im})
     end
 end
 
@@ -122,7 +118,7 @@ end
 % ---------------------------------------------
 if runEmbedding_firstMonk
     ecfg = [];
-    ecfg.anadir = anadirs{1};
+    ecfg.anadir = anadirs{1,1};
     ecfg.monk = 'yo';
     ecfg.nparallel = 15;
 
@@ -159,14 +155,14 @@ if runEmbedding_secondMonk
     
     for ii=1:numel(theseFiles)
         f = theseFiles{ii};
-        src = [anadirs{1} '/' f];
-        dst = [anadirs{2} '/' f];
+        src = [anadirs{1,1} '/' f];
+        dst = [anadirs{2,1} '/' f];
         copyfile(src,dst)
     end
 
     % now embed
     ecfg = [];
-    ecfg.anadir = anadirs{2};
+    ecfg.anadir = anadirs{2,1};
     ecfg.monk = 'wo';
     ecfg.nparallel = 15;
 
@@ -174,7 +170,7 @@ if runEmbedding_secondMonk
         ecfg.base_dataset = 'yo_2021-02-25_01_enviro';
         ecfg.normtype = 2;
     ecfg.get_training_data = 2;
-        ecfg.trainingdir = [anadirs{1} '/X_feat_norm'];
+        ecfg.trainingdir = [anadirs{1,1} '/X_feat_norm'];
     ecfg.embedding_train = 0;
     ecfg.embedding_test = 1;
         ecfg.knntype = 'faiss';
@@ -195,7 +191,7 @@ if runGraphCluster
     
     % loop over monks
     for im=1:numel(monks)
-        anadir = anadirs{im};
+        anadir = anadirs{im,1};
         load_pose_neural_data
         
         tic
@@ -203,7 +199,7 @@ if runGraphCluster
         toc
         
         % get peaks, to collapse actions
-        if 0
+        if 1
             tic
 
             nlabel = max(C_train);
@@ -241,7 +237,7 @@ if runGraphCluster
     end
     
     FN = toc(ST);
-    fprintf('TOTAL ELAPSED TIME, GRAPHY CLUSTER: %g\n',FN)
+    fprintf('TOTAL ELAPSED TIME, GRAPH CLUSTER: %g\n',FN)
 end
 
 
@@ -254,16 +250,9 @@ if runAnalyses
         
         % load
         monk = monks{im};
-        anadir = anadirs{im};
-        
-        if useSDF_resid==1
-            figdir = [anadir '/Figures'];
-        else
-            figdir = [anadir '/Figures_noResid'];
-        end
-
-        if ~exist(figdir); mkdir(figdir); end
-        
+        anadir = anadirs{im,1};
+        figdir = anadirs{im,2};
+                
         load_pose_neural_data
         
         % summaries
