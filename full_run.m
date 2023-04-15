@@ -477,15 +477,14 @@ if runAnalyses
             % switch sdf (Figure 6B)
             cfg = [];
             cfg.sdfpath = sdfpath;
-            cfg.figdir = [figdir '_controlSwitch'];
+            cfg.figdir = figdir;
             cfg.datasets = datasets;
             cfg.fs_frame = fs_frame;
             cfg.uarea = uarea;
 
             cfg.only_nonengage = 0;
-            cfg.plot_lim = [-1 1];
             cfg.seg_lim = [-1 1];
-            cfg.seg_min = 0.2; % 0.2
+            cfg.seg_min = 0.2;
             cfg.eng_smooth = 1;
 
             cfg.avgtype = 'median';
