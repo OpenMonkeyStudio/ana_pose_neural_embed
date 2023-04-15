@@ -90,8 +90,6 @@ xlabel('# actions')
 ylabel('mean dasgupta score')
 
 
-
-
 %% save figure
 sname = [figdir '/embedding_collapse_modHier.pdf'];
 save2pdf(sname,gcf)
